@@ -1,3 +1,8 @@
+# Only look at Assets
+Library/
+obj/
+ProjectSettings/
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
