@@ -1,0 +1,411 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using KDTreeDLL;
+using Random = UnityEngine.Random;
+
+public class DynamicPoint : MonoBehaviour
+{
+    public float[] startPos, goalPos, startVel, goalVel;
+    public float MAX_SPEED = 0.0F, MAX_ACCEL = 0.0F;
+    public UnityEngine.UI.Text TimerText;
+    //private float time = 0.0F;
+    public Vector2[][] polygons;
+    public Vector2[] boundaryPolygon;
+
+    private List<TreeNode> nodes = new List<TreeNode>();
+    private KDTree kdTree;
+
+    List<Node> path;
+    private int curPos = 0;
+    private int N = 0;
+
+    private float startTime;
+
+    private float informedLength = Mathf.Infinity;
+    private float curBestTime = Mathf.Infinity;
+
+    public bool useSaved = false;
+
+    private void OnDrawGizmos()
+    {
+        foreach (var p in nodes)
+        {
+            Gizmos.DrawCube(new Vector3(p.pos.x, p.pos.y, 20), new Vector3(0.2F, 0.2F, 0));
+        }
+
+    }
+
+    bool fulfillInformed(Vector2 p)
+    {
+        //return true;
+        bool res = informedLength > (p - new Vector2(startPos[0], startPos[1])).magnitude + (p - new Vector2(goalPos[0], goalPos[1])).magnitude;
+//        Debug.Log("useful");
+//        Debug.Log(informedLength);
+//        Debug.Log((p - new Vector2(startPos[0], startPos[1])).magnitude + (p - new Vector2(goalPos[0], goalPos[1])).magnitude);
+        if (!res)
+        {
+            Debug.Log("im useful");
+        }
+        return res;
+    }
+
+    //Generates a random point, then checks to see if it fits the boundary
+    Vector2 randomPoint()
+    {
+        float minX = Mathf.Infinity, minY = Mathf.Infinity, maxX = Mathf.NegativeInfinity, maxY = Mathf.NegativeInfinity;
+        foreach (Vector2 p in boundaryPolygon)
+        {
+            minX = Mathf.Min(minX, p.x);
+            minY = Mathf.Min(minY, p.y);
+            maxX = Mathf.Max(maxX, p.x);
+            maxY = Mathf.Max(maxY, p.y);
+        }
+        // our optimization
+        var polygonId = Random.Range(0, polygons.Length);
+        var vertexId = Random.Range(0, polygons[polygonId].Length);
+
+        float x, y;
+        do
+        {
+            //bias to obstacle vertex
+            var vertex = polygons[polygonId][vertexId];
+            x = Utils.gaussianRandom(vertex.x, 3.0F);
+            y = Utils.gaussianRandom(vertex.y, 3.0F);
+
+            //bias to goal
+            //x = Utils.gaussianRandom(goalPos[0], 10.0F);
+            //y = Utils.gaussianRandom(goalPos[1], 10.0F);
+//            x = Random.Range(minX, maxX);
+//            y = Random.Range(minY, maxY);
+        } while (!(x > minX && x < maxX && y > minY && y < maxY) || !Utils.ContainsPoint(boundaryPolygon, new Vector2(x, y)));
+        return new Vector2(x, y);
+    }
+
+    //I've got to say that this is really elegant and clean, nicely done.
+    Vector2 randomVel()
+    {
+
+        var x = Random.Range(-1.0F, 1.0F);
+        var y = Random.Range(-1.0F, 1.0F);
+        var v = new Vector2(x, y);
+        v.Normalize();
+        v *= MAX_SPEED;
+        return v;
+    }
+
+    TreeNode randomNode()
+    {
+
+        /*var r = Random.Range(0F, 1.0F);
+        if (r < 0.01F) return goalNode;*/
+        Vector2 p = randomPoint(), v = randomVel();
+        return new TreeNode(p, v, 0);
+    }
+
+    TreeNode findClosestPoint(List<TreeNode> nodes, TreeNode target)
+    {
+        float minDist = Mathf.Infinity;
+        TreeNode closest = new TreeNode();
+        foreach (var p in nodes)
+        {
+            Vector2 v = target.pos - p.pos; //So right now, we're doing this based off of position difference and not the time difference, so we should incorporate that somewhere
+            if (v.magnitude < minDist)
+            {
+                closest = p;
+                minDist = v.magnitude;      //we should really store these values somewhere to save repeated computations
+            }
+        }
+        return closest;
+    }
+
+    bool pathFeasible(TreeNode from, TreeNode to, DynamicPointInput input)
+    {
+        if (input.accel.magnitude > MAX_ACCEL) return false;
+        if (to.vel.magnitude > MAX_SPEED) return false;
+        const float DELTA_T = 0.05F;
+        TreeNode prev = from;
+        float sumT = 0;
+        while (sumT < input.time)
+        {
+            var dt = Mathf.Min(DELTA_T, input.time);
+            var pos = prev.pos + prev.vel * dt + 0.5F * input.accel * dt * dt;
+            if (!Utils.ContainsPoint(boundaryPolygon, pos) || pointInObstacles(pos)) return false;
+            var vel = prev.vel + input.accel * dt;
+            TreeNode nextPoint = new TreeNode(pos, vel, prev.time + dt);
+            //nodes.Add(nextPoint);
+            prev = nextPoint;
+            sumT += dt;
+        }
+        return true;
+    }
+
+    Pair<Pair<TreeNode, TreeNode>, float> findCheapestPoint(List<TreeNode> nodes, TreeNode target, bool approx = false)
+    {
+        float minCost = Mathf.Infinity;
+        TreeNode cheapest = new TreeNode();
+        TreeNode dest = new TreeNode();
+        //var knn = kdTree.nearest(new double[2] {target.pos.x, target.pos.y}, Math.Min(nodes.Count, 100));
+        var knn = nodes;
+        foreach (var nn in knn)
+        {
+            TreeNode p = (TreeNode) nn;
+            var input = dynamicPointInput(p, target, approx);
+            if (input.time + p.time < minCost && pathFeasible(p, input.resultNode, input))
+            {
+                minCost = p.time + input.time;
+                cheapest = p;
+                dest = input.resultNode;
+            }
+        }
+        return new Pair<Pair<TreeNode, TreeNode>, float> (new Pair<TreeNode, TreeNode>(cheapest, dest), minCost);
+    }
+
+    bool pointInObstacles(Vector2 pos)
+    {
+        foreach (var p in polygons)
+        {
+            if (Utils.ContainsPoint(p, pos)) return true;   //Convenient function :)
+        }
+        return false;
+    }
+
+    void reparent(List<TreeNode> nodes, TreeNode parent, TreeNode goal)
+    {
+        // Doesn't work for approx. dynamic input
+        for (int i = 0; i <= nodes.Count; i++) {
+                TreeNode p = i == nodes.Count ? goal : nodes[i];
+                var input = dynamicPointInput(parent, p);
+                if (input.time + parent.time < p.time && pathFeasible(parent, p, input))
+                {
+                    p.time = input.time + parent.time;
+                    p.SetParent(parent);
+                }
+        }
+    }
+
+    void addNode(List<TreeNode> nodes, TreeNode node)  
+    {
+        nodes.Add(node);
+        kdTree.insert(new double[2] {node.pos.x, node.pos.y}, node);
+    }
+
+    private int usefulCnt = 0;
+
+    List<Node> GetFilledPath(List<TreeNode> path)
+    {
+        List<Node> filledPath = new List<Node>();
+        for (var i = 0; i < path.Count - 1; i++)
+        {
+            const float DELTA_T = 0.1F;
+            var input = dynamicPointInput(path[i], path[i + 1]);
+            //Debug.Log(path[i + 1].vel.magnitude + " " + (path[i].vel + input.first * input.second).magnitude);
+
+            float sumT = 0;
+            var prev = path[i];
+            filledPath.Add(prev);
+            while (sumT < input.time)
+            {
+                var dt = Mathf.Min(DELTA_T, input.time);
+                var pos = prev.pos + prev.vel * dt + 0.5F * input.accel * dt * dt;
+                var vel = prev.vel + input.accel * dt;
+                TreeNode nextPoint = new TreeNode(pos, vel, prev.time + dt);
+                filledPath.Add((Node) nextPoint);
+                prev = nextPoint;
+                sumT += dt;
+            }
+        }
+        return filledPath;
+    }
+
+
+    List<Node> PlanRRT()
+    {
+        // RRT*
+        var startNode = new TreeNode(new Vector2(startPos[0], startPos[1]), new Vector2(startVel[0], startVel[1]), 0);
+        addNode(nodes, startNode);
+        var goalNode = new TreeNode(new Vector2(goalPos[0], goalPos[1]), new Vector2(goalVel[0], goalVel[1]), 0);
+        int cnt = 1000, i = 0;
+        float r = Mathf.Infinity; // TODO: Dynamic compute this r
+        var solnCnt = 0;
+        while (i++ < cnt)
+        {
+            TreeNode target = i == cnt ? goalNode : randomNode();
+            var cheapest = findCheapestPoint(nodes, target, i!=cnt);
+            var cheapestNode = cheapest.first.first;
+            target = cheapest.first.second; // change to the target approximated
+            var cheapestCost = cheapest.second;
+            if (cheapestCost == Mathf.Infinity) continue;
+            if ((target.pos - goalNode.pos).magnitude <= 0.5)
+            {
+                Debug.Log("found a soln");
+                solnCnt++;
+                informedLength = Mathf.Min(informedLength, cheapestCost * MAX_SPEED);
+                curBestTime = Mathf.Min(curBestTime, cheapestCost);
+                Debug.Log(target.pos);
+                Debug.Log(cheapestCost);
+
+            }
+            if (cheapestCost + (goalNode.pos - target.pos).magnitude / MAX_SPEED > curBestTime + 0.5)
+            {
+                usefulCnt++;
+                i--;
+                continue;
+            }
+            cheapestNode.children.Add(target);
+            target.SetParent(cheapestNode);
+            target.time = cheapestCost;
+            addNode(nodes, target);
+            //nodes.Add(target);
+            //       reparent(nodes, target, goalNode);
+        }
+        Debug.Log("useful count = " + usefulCnt);
+        Debug.Log("goalNode parent count " + (goalNode.parent != null));
+
+        List<TreeNode> path = new List<TreeNode>();
+        backtrackPath(nodes, startNode, goalNode, path);
+
+        for (i = 0; i < path.Count - 1; i++)
+        {
+            var f = path[i];
+            var to = path[i + 1];
+            var input = dynamicPointInput(f, to);
+            Debug.Log("vel " + i);
+
+            Debug.Log(to.vel);
+            Debug.Log(f.vel + input.accel * input.time);
+
+            Debug.Log("pos");
+            Debug.Log(f.pos + input.time * f.vel + 0.5F * input.accel * input.time * input.time);
+            Debug.Log(to.pos);
+        }
+
+        var filledPath = GetFilledPath(path);
+        Utils.SaveFilledPath(filledPath);
+
+        Debug.Log("path " + path.Count);
+        Debug.Log("path[cnt] " + path[path.Count - 1].pos.x + " " + path[path.Count - 1].pos.y + " " + path[path.Count - 1].time);
+        return filledPath;
+    }
+/*
+    List<TreeNode> Plan()
+    {
+        // RRT
+        var startNode = new TreeNode(new Vector2(startPos[0], startPos[1]), new Vector2(startVel[0], startVel[1]), 0);
+        nodes.Add(startNode);
+        var goalNode = new TreeNode(new Vector2(goalPos[0], goalPos[1]), new Vector2(goalVel[0], goalVel[1]), 0);
+        int cnt = 2000, i = 0;
+        while (i++ < cnt)
+        {
+            TreeNode target = i == cnt ? goalNode : randomNode();
+            TreeNode closest = findClosestPoint(nodes, target);
+            const float DELTA_T = 0.1F;
+            var input = dynamicPointInput(closest, target);
+            TreeNode prev = closest;
+            float sumT = 0;
+            while (sumT < input.time)
+            {
+                var dt = Mathf.Min(DELTA_T, input.time);
+                var pos = prev.pos + prev.vel * dt + 0.5F * input.accel * dt * dt;
+                if (!Utils.ContainsPoint(boundaryPolygon, pos ) || pointInObstacles(pos)) break;
+                var vel = prev.vel + input.accel * dt;
+                TreeNode nextPoint = i == cnt && sumT + dt >= input.time ? goalNode : new TreeNode(pos, vel, prev.time + dt);
+                prev.children.Add(nextPoint);
+                nextPoint.parent.Add(prev);
+                // add parent
+                nodes.Add(nextPoint);
+                prev = nextPoint;
+                sumT += dt;
+            }
+
+        }
+        Debug.Log("goalNode parent count " + goalNode.parent.Count);
+
+        List<TreeNode> path = new List<TreeNode>();
+        backtrackPath(nodes, startNode, goalNode, path);
+
+        Debug.Log("path " + path.Count);
+        return path;
+    }
+*/
+    static void backtrackPath(List<TreeNode> nodes, TreeNode startNode, TreeNode current, List<TreeNode> path)
+    {
+        if (current.parent != null) backtrackPath(nodes, startNode, current.parent, path);
+        path.Add(current);
+    }
+
+    private DynamicPointInput dynamicPointInput(TreeNode near, TreeNode target, bool approx = false)
+    {
+        float t = 2 * (target.pos - near.pos).magnitude / (target.vel + near.vel).magnitude;
+        var a = 2 * (target.pos - near.pos - near.vel * t) / (t * t);
+        TreeNode dest = approx ? new TreeNode(target.pos, near.vel + a * t, 0) : target;
+        //var a = (target.vel - near.vel) / t;
+        // Debug.Log("input " + a + " " + t);
+/*        if (a.magnitude > MAX_ACCEL)
+        {
+            a.Normalize();
+            a *= MAX_ACCEL;
+            // TODO: need to tweak t after fixing a
+        }*/
+        return new DynamicPointInput(a, t, dest);
+    }
+
+    // Use this for initialization
+    void Start()
+    {
+        if (useSaved)
+        {
+            path = Utils.LoadFilledPath();
+            if (path != null) return;
+        }
+        transform.position = new Vector3(startPos[0], startPos[1], 1);
+        //TimerText.text = "0";
+        kdTree = new KDTree(2);
+        path = PlanRRT();
+        startTime = Time.time;
+    }
+
+    private bool init = false;
+    private float totalTime = 0F;
+    // Update is called once per frame
+    void Update()
+    {
+        if (path != null && path.Count > 0)
+        {
+            //Debug.Log("pathCnt " + path.Count);
+            //Debug.Log("curPos " + curPos);
+            /*          if (curPos == path.Count) return;
+
+                      Vector2 v2 = path[curPos].pos;
+                      if (transform.position == new Vector3(v2.x, v2.y, 1)) curPos++;
+
+
+                      if (curPos == path.Count) return;
+                      float step = path[curPos].vel.magnitude * Time.deltaTime;
+
+                      transform.position = Vector3.MoveTowards(transform.position, new Vector3(v2.x, v2.y, 1), step);*/
+            totalTime += Time.deltaTime;
+            UpdatePosition();
+        }
+    }
+
+    void UpdatePosition()
+    {
+        float time = totalTime;
+        while (curPos + 1 < path.Count && time > path[curPos + 1].time) curPos++;
+        if (curPos >= path.Count)
+        {
+            return;
+        }
+//        var cur = path[curPos];
+//        var next = path[curPos + 1];
+//        float dt = time - cur.time;
+//        var input = dynamicPointInput(cur, next);
+//        var pos = path[curPos].pos + dt * cur.vel + 0.5F * input.accel * dt * dt;
+        var pos = path[curPos].pos;
+        transform.position = new Vector3(pos.x, pos.y, 1);
+    }
+
+
+}
