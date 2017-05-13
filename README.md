@@ -11,5 +11,5 @@ The implementation is done in C# through Unity.
 | Author              		 | GitHub                                            |
 |:---------------------------|:--------------------------------------------------|
 | Robin Maillot   			 | [robin-maillot](https://github.com/robin-maillot) |
-| Kevin Holdcroft			 | [robin-maillot](https://github.com/Xtracheese23) |
+| Kevin Holdcroft			 | [Xtracheese23](https://github.com/Xtracheese23) |
 
