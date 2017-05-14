@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine.UI;
 
+[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class GameManager : MonoBehaviour {
     public Point[] point;
     public Set[] guardSets;
@@ -20,13 +21,15 @@ public class GameManager : MonoBehaviour {
     public static float goalMag = 1;
     public static float formMag = 20;
     public static float obsMultiplier = 3;
-
     public Datastruct data;
     public bool useSaved;
     public string problem;
     public static int numberofGuards;
     private int itemcount;
     public static float[] dist;
+
+    public Mesh mesh;
+    private Vector3[] vertices;
 
     private void OnDrawGizmos()
     {
@@ -49,6 +52,37 @@ public class GameManager : MonoBehaviour {
         }
         Vector3 packagepos = findPackage();
         Gizmos.DrawIcon(packagepos, "pizza.tif", true);
+
+        Gizmos.color = Color.black;
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            Gizmos.DrawSphere(vertices[i], 0.1f);
+        }
+    }
+
+    private void Generate()
+    {
+        int xSize=10, ySize=10;
+        WaitForSeconds wait = new WaitForSeconds(0.05f);
+
+        GetComponent<MeshFilter>().mesh = mesh = new Mesh();
+        mesh.name = "Procedural Grid";
+
+        vertices = new Vector3[(xSize + 1) * (ySize + 1)];
+        for (int i = 0, y = 0; y <= ySize; y++)
+        {
+            for (int x = 0; x <= xSize; x++, i++)
+            {
+                vertices[i] = new Vector3(x, y);
+            }
+        }
+        mesh.vertices = vertices;
+
+        int[] triangles = new int[3];
+        triangles[0] = 0;
+        triangles[1] = xSize + 1;
+        triangles[2] = 1;
+        mesh.triangles = triangles;
     }
 
     Point CreateAI()
@@ -105,6 +139,7 @@ public class GameManager : MonoBehaviour {
         {
             Cheetah.instance = new Cheetah();
         }
+        Generate();
     }
 
     // Use this for initialization
