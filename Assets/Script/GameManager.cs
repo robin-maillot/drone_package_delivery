@@ -73,16 +73,64 @@ public class GameManager : MonoBehaviour {
         {
             for (int x = 0; x <= xSize; x++, i++)
             {
-                vertices[i] = new Vector3(x, y);
+                vertices[i] = new Vector3(x, y,y);
             }
         }
         mesh.vertices = vertices;
 
-        int[] triangles = new int[3];
+        int[] triangles = new int[6];
         triangles[0] = 0;
         triangles[1] = xSize + 1;
         triangles[2] = 1;
+        triangles[3] = 1;
+        triangles[4] = xSize + 3;
+        triangles[5] = 2;
         mesh.triangles = triangles;
+    }
+
+    private Mesh GeneratePolygonMesh(float[][] polygon)
+    {
+        //int xSize = 10, ySize = 10;
+        WaitForSeconds wait = new WaitForSeconds(0.05f);
+        int l = polygon.Length;
+        GetComponent<MeshFilter>().mesh = mesh = new Mesh();
+        mesh.name = "Procedural Grid";
+
+        vertices = new Vector3[l*2];
+        for (int i = 0; i < l; i++)
+        {
+            vertices[i] = new Vector3(polygon[i][0], polygon[i][1],0);
+            vertices[i+ l] = new Vector3(polygon[i][0], polygon[i][1], polygon[i][2]);
+
+        }
+        Debug.Log(vertices);
+        mesh.vertices = vertices;
+
+        int[] triangles = new int[3*(2*l)];
+        for (int i = 0; i < l; i++)
+        {
+            triangles[3 * i] = i;
+            triangles[(3 * i) + 1] = (i+1)%l;
+            triangles[(3 * i) + 2] = i+l;
+            Debug.Log(i+" "+ (l + i)+" "+ (i + 1));
+            triangles[3 *(i+l)] = (i+1)%l;
+            triangles[(3 * (i+l)) + 2] = i+l;
+            triangles[(3 * (i+l)) + 1] = ((i + 1)%l + l);
+            Debug.Log(i + 1 + " " + (i + l) + " " + (i + 1 + l));
+
+        }
+        /*
+        triangles = new int[3 * (l - 2)];
+        for (int i = 0; i < l - 2; i++)
+        {
+            triangles[3 * i] = 0;
+            triangles[(3 * i) + 1] = (i+1) % l;
+            triangles[(3 * i) + 2] = (i + 2) % l;
+            Debug.Log(i + " " + (l + i) + " " + (i + 1));
+        }
+        */
+        mesh.triangles = triangles;
+        return mesh;
     }
 
     Point CreateAI()
@@ -139,7 +187,16 @@ public class GameManager : MonoBehaviour {
         {
             Cheetah.instance = new Cheetah();
         }
-        Generate();
+        //Generate();
+        float[][] test_poly = new float[5][];
+        test_poly[0] = new float[]{ 0,0,3};
+        test_poly[1] = new float[] { 0, 1, 3 };
+        test_poly[2] = new float[] { 0.5f, 1.5f, 3 };
+        test_poly[3] = new float[] { 1, 1, 3 };
+        test_poly[4] = new float[] { 1, 0, 3 };
+
+
+        Mesh m = GeneratePolygonMesh(test_poly);
     }
 
     // Use this for initialization
