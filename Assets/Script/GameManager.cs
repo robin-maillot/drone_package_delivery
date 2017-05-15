@@ -28,9 +28,6 @@ public class GameManager : MonoBehaviour {
     private int itemcount;
     public static float[] dist;
 
-    public Mesh mesh;
-    private Vector3[] vertices;
-
     private void OnDrawGizmos()
     {
         for (int i = 0; i < numberofGuards; i++)
@@ -52,85 +49,87 @@ public class GameManager : MonoBehaviour {
         }
         Vector3 packagepos = findPackage();
         Gizmos.DrawIcon(packagepos, "pizza.tif", true);
-
-        Gizmos.color = Color.black;
-        for (int i = 0; i < vertices.Length; i++)
-        {
-            Gizmos.DrawSphere(vertices[i], 0.1f);
-        }
-    }
-
-    private void Generate()
-    {
-        int xSize=10, ySize=10;
-        WaitForSeconds wait = new WaitForSeconds(0.05f);
-
-        GetComponent<MeshFilter>().mesh = mesh = new Mesh();
-        mesh.name = "Procedural Grid";
-
-        vertices = new Vector3[(xSize + 1) * (ySize + 1)];
-        for (int i = 0, y = 0; y <= ySize; y++)
-        {
-            for (int x = 0; x <= xSize; x++, i++)
-            {
-                vertices[i] = new Vector3(x, y,y);
-            }
-        }
-        mesh.vertices = vertices;
-
-        int[] triangles = new int[6];
-        triangles[0] = 0;
-        triangles[1] = xSize + 1;
-        triangles[2] = 1;
-        triangles[3] = 1;
-        triangles[4] = xSize + 3;
-        triangles[5] = 2;
-        mesh.triangles = triangles;
     }
 
     private Mesh GeneratePolygonMesh(float[][] polygon)
     {
-        //int xSize = 10, ySize = 10;
-        WaitForSeconds wait = new WaitForSeconds(0.05f);
-        int l = polygon.Length;
-        GetComponent<MeshFilter>().mesh = mesh = new Mesh();
-        mesh.name = "Procedural Grid";
 
-        vertices = new Vector3[l*2];
+        //int xSize = 10, ySize = 10;
+        int l = polygon.Length;
+        Vector2[] polygon2D = new Vector2[l];
+        Vector3[] vertices = new Vector3[l * 3];
+
+        for (int i = 0; i < l; i++)
+        {
+            polygon2D[i] = new Vector2(polygon[i][0], polygon[i][1]);
+        }
+        Triangulator tr = new Triangulator(polygon2D);
+        int[] indices = tr.Triangulate();
+
+        // Create the Vector3 vertices
+        Vector3[] polygon3D = new Vector3[l];
+        for (int i = 0; i < l; i++)
+        {
+            vertices[2*l+i] = new Vector3(polygon2D[i].x, polygon2D[i].y, 0);
+        }
+
+
         for (int i = 0; i < l; i++)
         {
             vertices[i] = new Vector3(polygon[i][0], polygon[i][1],0);
             vertices[i+ l] = new Vector3(polygon[i][0], polygon[i][1], polygon[i][2]);
-
         }
-        Debug.Log(vertices);
-        mesh.vertices = vertices;
 
-        int[] triangles = new int[3*(2*l)];
+        int[] triangles = new int[3*(4*l)+indices.Length];
         for (int i = 0; i < l; i++)
         {
             triangles[3 * i] = i;
             triangles[(3 * i) + 1] = (i+1)%l;
             triangles[(3 * i) + 2] = i+l;
-            Debug.Log(i+" "+ (l + i)+" "+ (i + 1));
             triangles[3 *(i+l)] = (i+1)%l;
             triangles[(3 * (i+l)) + 2] = i+l;
             triangles[(3 * (i+l)) + 1] = ((i + 1)%l + l);
-            Debug.Log(i + 1 + " " + (i + l) + " " + (i + 1 + l));
 
+            triangles[3*2*l+3 * i] = i;
+            triangles[3*2 * l + (3 * i) + 2] = (i + 1) % l;
+            triangles[3*2 * l + (3 * i) + 1] = i + l;
+            triangles[3*2 * l + 3 * (i + l)] = (i + 1) % l;
+            triangles[3*2 * l + (3 * (i + l)) + 1] = i + l;
+            triangles[3*2 * l + (3 * (i + l)) + 2] = ((i + 1) % l + l);
+
+            /*
+            triangles = new int[3 * (l - 2)];
+            for (int i = 0; i < l - 2; i++)
+            {
+                triangles[3 * i] = 0;
+                triangles[(3 * i) + 1] = (i+1) % l;
+                triangles[(3 * i) + 2] = (i + 2) % l;
+                Debug.Log(i + " " + (l + i) + " " + (i + 1));
+            }
+            */
         }
-        /*
-        triangles = new int[3 * (l - 2)];
-        for (int i = 0; i < l - 2; i++)
+        for (int i = 0; i < indices.Length; i++)
         {
-            triangles[3 * i] = 0;
-            triangles[(3 * i) + 1] = (i+1) % l;
-            triangles[(3 * i) + 2] = (i + 2) % l;
-            Debug.Log(i + " " + (l + i) + " " + (i + 1));
+            triangles[3 * (4 * l) +i] = indices[i];
         }
-        */
-        mesh.triangles = triangles;
-        return mesh;
+
+        // Create the mesh
+        Mesh msh = new Mesh();
+        msh.vertices = vertices;
+        msh.triangles = triangles;
+        msh.RecalculateNormals();
+        msh.RecalculateBounds();
+
+        GameObject obj = new GameObject();
+
+        // Set up game object with mesh;
+        obj.AddComponent(typeof(MeshRenderer));
+        MeshFilter filter = obj.AddComponent(typeof(MeshFilter)) as MeshFilter;
+        filter.mesh = msh;
+
+        obj.transform.parent = camera.transform;
+        obj.GetComponent<MeshRenderer>().material.SetColor("_Color", Color.black);
+        return msh;
     }
 
     Point CreateAI()
@@ -187,16 +186,6 @@ public class GameManager : MonoBehaviour {
         {
             Cheetah.instance = new Cheetah();
         }
-        //Generate();
-        float[][] test_poly = new float[5][];
-        test_poly[0] = new float[]{ 0,0,3};
-        test_poly[1] = new float[] { 0, 1, 3 };
-        test_poly[2] = new float[] { 0.5f, 1.5f, 3 };
-        test_poly[3] = new float[] { 1, 1, 3 };
-        test_poly[4] = new float[] { 1, 0, 3 };
-
-
-        Mesh m = GeneratePolygonMesh(test_poly);
     }
 
     // Use this for initialization
@@ -206,6 +195,27 @@ public class GameManager : MonoBehaviour {
         endRange = range;
         formMag = form;
         obsMultiplier = obs;
+
+
+        //Generate();
+
+        float[][] test_poly = new float[4][];
+        test_poly[0] = new float[] { 5, 0, -20 };
+        test_poly[1] = new float[] { 5, 10, -20 };
+        test_poly[2] = new float[] { 20, 10, -20 };
+        test_poly[3] = new float[] { 20, 0, -20 };
+        Mesh m1 = GeneratePolygonMesh(test_poly);
+        test_poly[0] = new float[] { 30, 0, -20 };
+        test_poly[1] = new float[] { 30, 40, -20 };
+        test_poly[2] = new float[] { 40, 40, -20 };
+        test_poly[3] = new float[] { 40, 0, -20 };
+        Mesh m2 = GeneratePolygonMesh(test_poly);
+        test_poly[0] = new float[] { 0, 15, -10 };
+        test_poly[1] = new float[] { 0, 25, -10 };
+        test_poly[2] = new float[] { 20, 25, -10 };
+        test_poly[3] = new float[] { 20, 15, -10 };
+        Mesh m3 = GeneratePolygonMesh(test_poly);
+
 
         colors = new Color[4];
         colors[0] = Color.green;
@@ -226,13 +236,31 @@ public class GameManager : MonoBehaviour {
         for (int i = 0; i < input.boundary_polygon.Length; i++) boundaryPolygon[i] = new Vector2(input.boundary_polygon[i][0], input.boundary_polygon[i][1]);
         map.boundaryPolygon = boundaryPolygon;
 
-        for (int i = 0; i < input.boundary_polygon.Length; i++)
-        {
-            var next = (i + 1) % input.boundary_polygon.Length;
-            //boundaryPolygon[i] = new Vector2(input.boundary_polygon[i][0], input.boundary_polygon[i][1]);
-            Debug.DrawLine(new Vector3(input.boundary_polygon[i][0], input.boundary_polygon[i][1], 1), new Vector3(input.boundary_polygon[next][0], input.boundary_polygon[next][1], 1), Color.red, Mathf.Infinity);
-        }
+        Triangulator boundarytr = new Triangulator(boundaryPolygon);
+        int[] boundaryindices = boundarytr.Triangulate();
 
+        // Create the Vector3 vertices
+        Vector3[] boundaryvertices = new Vector3[boundaryPolygon.Length];
+        for (int i = 0; i < boundaryvertices.Length; i++)
+        {
+            boundaryvertices[i] = new Vector3(boundaryPolygon[i].x, boundaryPolygon[i].y, 0.01f);
+        }
+        // Create the mesh
+        Mesh boundarymsh = new Mesh();
+        boundarymsh.vertices = boundaryvertices;
+        boundarymsh.triangles = boundaryindices;
+        boundarymsh.RecalculateNormals();
+        boundarymsh.RecalculateBounds();
+
+        GameObject boundaryobj = new GameObject();
+
+        // Set up game object with mesh;
+        boundaryobj.AddComponent(typeof(MeshRenderer));
+        MeshFilter filter = boundaryobj.AddComponent(typeof(MeshFilter)) as MeshFilter;
+        filter.mesh = boundarymsh;
+
+        boundaryobj.transform.parent = camera.transform;
+        boundaryobj.GetComponent<MeshRenderer>().material.SetColor("_Color", Color.cyan);
 
         int polygonCnt = 0;
         numberofGuards = 0;
@@ -254,7 +282,8 @@ public class GameManager : MonoBehaviour {
         }
 
         Vector2[][] inputPolygon = new Vector2[polycount][];
-            //gets each polygon opject
+        //gets each polygon opject
+        Debug.Log(input.polygon);
         foreach (var pair in input.polygon)
         {
             if (pair.Key.StartsWith("polygon"))         //checks if name is polygon
@@ -287,8 +316,8 @@ public class GameManager : MonoBehaviour {
 
                 // Set up game object with mesh;
                 obj.AddComponent(typeof(MeshRenderer));
-                MeshFilter filter = obj.AddComponent(typeof(MeshFilter)) as MeshFilter;
-                filter.mesh = msh;
+                MeshFilter filter2 = obj.AddComponent(typeof(MeshFilter)) as MeshFilter;
+                filter2.mesh = msh;
 
                 obj.transform.parent = camera.transform;
 
@@ -362,7 +391,7 @@ public class GameManager : MonoBehaviour {
 
             //point[i].startPos = input.start_pos; //need to update for multiple
             point[i].startPos = start_positions[i];
-            point[i].transform.position = new Vector3(start_positions[i][0], start_positions[i][1], 20);
+            point[i].transform.position = new Vector3(start_positions[i][0], start_positions[i][1], -5);
             point[i].goalPos = end_positions[i];
             point[i].startVel = input.start_vel;
             point[i].goalVel = input.goal_vel;
