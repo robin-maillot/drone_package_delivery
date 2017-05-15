@@ -28,9 +28,11 @@ public class GameManager : MonoBehaviour {
     private int itemcount;
     public static float[] dist;
 
+    private List<GameObject> buildingObjects = new List<GameObject>();
+
     private void OnDrawGizmos()
     {
-        for (int i = 0; i < numberofGuards; i++)
+        for (int i = 0; i < point.Length; i++)
         {
             if (point[i])
             {
@@ -49,18 +51,52 @@ public class GameManager : MonoBehaviour {
         }
         Vector3 packagepos = findPackage();
         Gizmos.DrawIcon(packagepos, "pizza.tif", true);
+
+        for (int i = 0; i < buildingObjects.Count; i++)
+        {
+            Vector3 s = buildingObjects[i].GetComponent<BoxCollider>().size;
+            Gizmos.DrawCube((buildingObjects[i].GetComponent<BoxCollider>().center), new Vector3(0.5F, 0.5F, 0));
+            //Gizmos.DrawCube((buildingObjects[i].GetComponent<BoxCollider>().center+s/2), new Vector3(1F, 1F, 0));
+            //Gizmos.DrawCube((buildingObjects[i].GetComponent<BoxCollider>().center - s / 2), new Vector3(1F, 1F, 0));
+
+        }
+        Gizmos.color = Color.red;
+        for (int i = 0; i < point.Length; i++)
+        {
+            Vector3 pos = point[i].transform.position;
+            Vector3 vClosest = new Vector3(100,100,100);
+            for (int j = 0; j < buildingObjects.Count; j++)
+            {
+                Vector3 v = buildingObjects[j].GetComponent<BoxCollider>().ClosestPointOnBounds(pos);
+                if (Vector3.Distance(v, pos) < Vector3.Distance(vClosest, pos))
+                    vClosest = v;                
+            }
+            Gizmos.DrawCube(vClosest, new Vector3(0.5F, 0.5F, 0));
+        }
     }
 
-    private Mesh GeneratePolygonMesh(float[][] polygon)
+    private GameObject GeneratePolygonMesh(float[][] polygon)
     {
 
-        //int xSize = 10, ySize = 10;
+        float xmin = Mathf.Infinity;
+        float xmax = -Mathf.Infinity;
+        float ymin = Mathf.Infinity;
+        float ymax = -Mathf.Infinity;
+
         int l = polygon.Length;
         Vector2[] polygon2D = new Vector2[l];
         Vector3[] vertices = new Vector3[l * 3];
 
         for (int i = 0; i < l; i++)
         {
+            if (polygon[i][0] < xmin)
+                xmin = polygon[i][0];
+            if (polygon[i][0] > xmax)
+                xmax = polygon[i][0];
+            if (polygon[i][1] < ymin)
+                ymin = polygon[i][1];
+            if (polygon[i][1] > ymax)
+                ymax = polygon[i][1];
             polygon2D[i] = new Vector2(polygon[i][0], polygon[i][1]);
         }
         Triangulator tr = new Triangulator(polygon2D);
@@ -127,9 +163,17 @@ public class GameManager : MonoBehaviour {
         MeshFilter filter = obj.AddComponent(typeof(MeshFilter)) as MeshFilter;
         filter.mesh = msh;
 
+        Vector2 center = Vector2.zero;
+        for (int i = 0; i < l; i++)
+        {
+            center += polygon2D[i];
+        }
         obj.transform.parent = camera.transform;
         obj.GetComponent<MeshRenderer>().material.SetColor("_Color", Color.black);
-        return msh;
+        BoxCollider boxCollider = obj.AddComponent<BoxCollider>();
+        boxCollider.size = new Vector3(Mathf.Abs(xmax -xmin), Mathf.Abs(ymax -ymin), Mathf.Abs(polygon[l - 1][2]));
+        boxCollider.center = new Vector3(center.x/l,center.y/l,polygon[l-1][2]/2);
+        return obj;
     }
 
     Point CreateAI()
@@ -195,27 +239,6 @@ public class GameManager : MonoBehaviour {
         endRange = range;
         formMag = form;
         obsMultiplier = obs;
-
-
-        //Generate();
-
-        float[][] test_poly = new float[4][];
-        test_poly[0] = new float[] { 5, 0, -20 };
-        test_poly[1] = new float[] { 5, 10, -20 };
-        test_poly[2] = new float[] { 20, 10, -20 };
-        test_poly[3] = new float[] { 20, 0, -20 };
-        //Mesh m1 = GeneratePolygonMesh(test_poly);
-        test_poly[0] = new float[] { 30, 0, -20 };
-        test_poly[1] = new float[] { 30, 40, -20 };
-        test_poly[2] = new float[] { 40, 40, -20 };
-        test_poly[3] = new float[] { 40, 0, -20 };
-        //Mesh m2 = GeneratePolygonMesh(test_poly);
-        test_poly[0] = new float[] { 0, 15, -10 };
-        test_poly[1] = new float[] { 0, 25, -10 };
-        test_poly[2] = new float[] { 20, 25, -10 };
-        test_poly[3] = new float[] { 20, 15, -10 };
-        //Mesh m3 = GeneratePolygonMesh(test_poly);
-
 
         colors = new Color[4];
         colors[0] = Color.green;
@@ -291,40 +314,13 @@ public class GameManager : MonoBehaviour {
                 Debug.Log(pair.Key);
                 float[][] polygon = pair.Value.ToObject<float[][]>();       //extracts float object
 
-                Mesh m = GeneratePolygonMesh(polygon);
+                buildingObjects.Add(GeneratePolygonMesh(polygon));
 
                 Vector2[] vertices2D = new Vector2[polygon.Length];
                 for (int i = 0; i < polygon.Length; i++)
                 {
                     vertices2D[i] = new Vector2(polygon[i][0], polygon[i][1]);      //puts float value to vertex
                 }
-                /*
-                Triangulator tr = new Triangulator(vertices2D);
-                int[] indices = tr.Triangulate();
-
-                // Create the Vector3 vertices
-                Vector3[] vertices = new Vector3[vertices2D.Length];
-                for (int i = 0; i < vertices.Length; i++)
-                {
-                    vertices[i] = new Vector3(vertices2D[i].x, vertices2D[i].y, 1);
-                }
-
-                // Create the mesh
-                Mesh msh = new Mesh();
-                msh.vertices = vertices;
-                msh.triangles = indices;
-                msh.RecalculateNormals();
-                msh.RecalculateBounds();
-
-                GameObject obj = new GameObject();
-
-                // Set up game object with mesh;
-                obj.AddComponent(typeof(MeshRenderer));
-                MeshFilter filter2 = obj.AddComponent(typeof(MeshFilter)) as MeshFilter;
-                filter2.mesh = msh;
-
-                obj.transform.parent = camera.transform;
-                */
                 inputPolygon[polygonCnt++] = vertices2D;
             } 
         }
@@ -430,7 +426,6 @@ public class GameManager : MonoBehaviour {
             }
         }
 
-
         // Power of Cheetah
 
         //Cheetah.instance.CreateOrLoad(problem, boundaryPolygon, inputPolygon);
@@ -449,8 +444,18 @@ public class GameManager : MonoBehaviour {
     private float[] error = new float[numberofGuards];
     void Update()
     {
+        for (int i = 0; i < buildingObjects.Count; i++)
+        {
+            for (int j = 0; j < numberofGuards; j++)
+            {
+                if (buildingObjects[i].GetComponent<BoxCollider>().bounds.Contains(point[j].transform.position))
+                    Debug.Log("Drone "+j+" is in building "+i);
+            }
+        }
+
         //error
         totalTime += Time.deltaTime;
+
         //Debug.Log("Time Elapsed: " + totalTime);
 
         if (UnityEditor.SceneView.sceneViews.Count > 0)
