@@ -6,12 +6,20 @@ Implement a decentrialized controller for a multi-drone delivery system. Waypoin
 
 #### Implementation
 
-The implementation is done in C# through Unity.
+The implementation is done in **C#** through **Unity**.
 All files modified are contained in [Assets](https://github.com/robin-maillot/drone_package_delivery/tree/master/Assets).
-test_problem can be used as a reference for how maps are defined.
+
+test_problem.json can be used as a reference for how maps are defined.
 
 | Author              		 | GitHub                                            |
 |:---------------------------|:--------------------------------------------------|
 | Robin Maillot   			 | [robin-maillot](https://github.com/robin-maillot) |
 | Kevin Holdcroft			 | [Xtracheese23](https://github.com/Xtracheese23) |
+
+
+#### Advancement
+- [X] 3D vizualization in Unity
+- [X] 3D collision detection (already implemented in **Unity**)
+
+#### TODO
 
