@@ -23,3 +23,8 @@ test_problem.json can be used as a reference for how maps are defined.
 
 #### TODO
 
+- [] Implement path planning
+	- [] Set waypoints
+	- [] Possibility to go above buildings
+	- [] Deviate from initial formation
+	- [] Convert PID and behavior based controller to 3D
