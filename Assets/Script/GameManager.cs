@@ -204,17 +204,17 @@ public class GameManager : MonoBehaviour {
         test_poly[1] = new float[] { 5, 10, -20 };
         test_poly[2] = new float[] { 20, 10, -20 };
         test_poly[3] = new float[] { 20, 0, -20 };
-        Mesh m1 = GeneratePolygonMesh(test_poly);
+        //Mesh m1 = GeneratePolygonMesh(test_poly);
         test_poly[0] = new float[] { 30, 0, -20 };
         test_poly[1] = new float[] { 30, 40, -20 };
         test_poly[2] = new float[] { 40, 40, -20 };
         test_poly[3] = new float[] { 40, 0, -20 };
-        Mesh m2 = GeneratePolygonMesh(test_poly);
+        //Mesh m2 = GeneratePolygonMesh(test_poly);
         test_poly[0] = new float[] { 0, 15, -10 };
         test_poly[1] = new float[] { 0, 25, -10 };
         test_poly[2] = new float[] { 20, 25, -10 };
         test_poly[3] = new float[] { 20, 15, -10 };
-        Mesh m3 = GeneratePolygonMesh(test_poly);
+        //Mesh m3 = GeneratePolygonMesh(test_poly);
 
 
         colors = new Color[4];
@@ -290,11 +290,15 @@ public class GameManager : MonoBehaviour {
             {
                 Debug.Log(pair.Key);
                 float[][] polygon = pair.Value.ToObject<float[][]>();       //extracts float object
+
+                Mesh m = GeneratePolygonMesh(polygon);
+
                 Vector2[] vertices2D = new Vector2[polygon.Length];
                 for (int i = 0; i < polygon.Length; i++)
                 {
                     vertices2D[i] = new Vector2(polygon[i][0], polygon[i][1]);      //puts float value to vertex
                 }
+                /*
                 Triangulator tr = new Triangulator(vertices2D);
                 int[] indices = tr.Triangulate();
 
@@ -320,7 +324,7 @@ public class GameManager : MonoBehaviour {
                 filter2.mesh = msh;
 
                 obj.transform.parent = camera.transform;
-
+                */
                 inputPolygon[polygonCnt++] = vertices2D;
             } 
         }
