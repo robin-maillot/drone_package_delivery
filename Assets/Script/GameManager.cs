@@ -412,6 +412,17 @@ public class GameManager : MonoBehaviour {
             point[i].Kp = Kp;
             point[i].Ki = Ki;
             point[i].Kd = Kd;
+
+            Vector3 pos = point[i].transform.position;
+            Vector3 vClosest = new Vector3(100, 100, 100);
+            for (int j = 0; j < buildingObjects.Count; j++)
+            {
+                Vector3 v = buildingObjects[j].GetComponent<BoxCollider>().ClosestPointOnBounds(pos);
+                if (Vector3.Distance(v, pos) < Vector3.Distance(vClosest, pos))
+                    vClosest = v;
+            }
+            point[i].closestBuildingPoint = vClosest;
+
         }
         for (int i = 0; i < numberofGuards; i++)
         {
@@ -457,6 +468,27 @@ public class GameManager : MonoBehaviour {
         totalTime += Time.deltaTime;
 
         //Debug.Log("Time Elapsed: " + totalTime);
+
+        for (int i = 0; i < point.Length; i++)
+        {
+            Vector3 pos = point[i].transform.position;
+            Vector3 vClosest = new Vector3(100, 100, 100);
+            for (int j = 0; j < buildingObjects.Count; j++)
+            {
+                Vector3 v = buildingObjects[j].GetComponent<BoxCollider>().ClosestPointOnBounds(pos);
+                if (Vector3.Distance(v, pos) < Vector3.Distance(vClosest, pos))
+                    vClosest = v;
+
+                // Pause when collision
+                point[i].closestBuildingPoint = vClosest;
+                if (buildingObjects[j].GetComponent<BoxCollider>().bounds.Contains(pos))
+                {
+                    Debug.Log("Drone " + i + " is in building " + j);
+                    Debug.Break();
+                }
+            }
+        }
+
 
         if (UnityEditor.SceneView.sceneViews.Count > 0)
         {
