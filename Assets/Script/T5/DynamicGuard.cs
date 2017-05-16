@@ -43,6 +43,7 @@ public class DynamicGuard : Point
         foreach (var poly in this.polygons)     
         {
             float dist = Mathf.Infinity;
+            /*
             var dirn = new Vector2(Mathf.Infinity, Mathf.Infinity);
             for (int i = 0; i < poly.Length; i++)   //each poly defines a new polygon, only need to return closest side
             {  
@@ -66,11 +67,21 @@ public class DynamicGuard : Point
                         //dirn = new Vector2(poly[j][0] - poly[i][0], poly[i][1] - poly[j][1]);        //if the guard decides to suicide into the wall, this is the reason
                         dirn = new Vector2(poly[j][1] - poly[i][1], poly[i][0] - poly[j][0]);
                     }
+                    
                     dirn.Normalize();                       // ^ p2x - p1x, p1y - p2y
+
                     dirn *= Mathf.Pow(obsMultiplier / (dist), 2);
                 }                                 
             }
-            
+            */
+
+            // Uses the unity function to calculate closest point
+            Vector2 dirn = new Vector2(this.transform.position.x - this.closestBuildingPoint.x, this.transform.position.y - this.closestBuildingPoint.y); // x and y used to be inversed
+            dist = Mathf.Abs(Vector2.Distance(transform.position, this.closestBuildingPoint));
+            dirn.Normalize();                       // ^ p2x - p1x, p1y - p2y
+
+            dirn *= Mathf.Pow(obsMultiplier / (dist), 2);
+
             if (Vector2.Dot(vel, dirn) < 0 && dist < 5)
             {
                 Debug.Log("Distance: " + dist + " dirn " + dirn + " Dot: " + Vector2.Dot(vel, dirn));
