@@ -487,7 +487,7 @@ public class GameManager : MonoBehaviour {
                 if (buildingObjects[j].GetComponent<BoxCollider>().bounds.Contains(pos))
                 {
                     Debug.Log("Drone " + i + " is in building " + j);
-                    Debug.Break();
+                    //Debug.Break();
                 }
             }
         }
