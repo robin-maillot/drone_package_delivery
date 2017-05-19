@@ -368,8 +368,49 @@ public class DynamicGuard : Point
         transform.position = input;
     }
 
-    //Checks to see if we will collide with a wall using standard kinematics. 
+    //Checks to see if we will collide with a wall using standard kinematics (using unity collision). 
     Vector3 CollisionImminant()
+    {
+        //bool collision = false;
+        var dt = Time.deltaTime;
+
+        var t_col = this.vel.magnitude / MAX_ACCEL;
+        var d = Mathf.Abs(vel.magnitude) * t_col - MAX_ACCEL * t_col * t_col * 0.5; //maximum possible distance travelled
+
+        float dist = Mathf.Infinity;
+            if (!collision)
+        {
+            dist = Vector3.Distance(transform.position, closestBuildingPoint);
+            Vector3 dirn = closestBuildingPoint - transform.position;
+            //Debug.Log("dist: " + dist + " Guard: " + guardID);
+            if (dist < d + 0.5 && Vector2.Dot(vel, new Vector2(dirn.x, dirn.y)) < 0)
+            {
+                collision = true;
+                t_dur = t_col;
+                t_run = 0;
+                coll_acc = new Vector2(dirn.x, dirn.y);
+                //Debug.Log("COLLISION IMMINANT: GUARD " + guardID);
+                //Debug.Log("d: " + d + ", dist: " + dist + ", velmag: " + vel.magnitude );
+                //Debug.Log("dirn: " + Vector2.Dot(vel, dirn));
+            }
+        }
+        if (t_run > t_dur)
+            collision = false;
+        if (collision) //can't do else, since we need to check this after the first point
+        {
+            vel += coll_acc * dt;
+            t_run += dt;
+            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), velcolour);
+            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + coll_acc.x, transform.position.y + coll_acc.y, 20), Color.red);
+
+            return transform.position + new Vector3(vel.x, vel.y, 0F) * dt;
+        }
+        return new Vector3(0F, 0F, 0F);
+    }
+
+
+    //Checks to see if we will collide with a wall using standard kinematics. 
+    Vector3 CollisionImminant2()
     {
         //bool collision = false;
         var dt = Time.deltaTime;
