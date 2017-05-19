@@ -63,15 +63,18 @@ public class GameManager : MonoBehaviour {
         Gizmos.color = Color.red;
         for (int i = 0; i < point.Length; i++)
         {
-            Vector3 pos = point[i].transform.position;
-            Vector3 vClosest = new Vector3(100,100,100);
-            for (int j = 0; j < buildingObjects.Count; j++)
+            if (point[i])
             {
-                Vector3 v = buildingObjects[j].GetComponent<BoxCollider>().ClosestPointOnBounds(pos);
-                if (Vector3.Distance(v, pos) < Vector3.Distance(vClosest, pos))
-                    vClosest = v;                
+                Vector3 pos = point[i].transform.position;
+                Vector3 vClosest = new Vector3(100, 100, 100);
+                for (int j = 0; j < buildingObjects.Count; j++)
+                {
+                    Vector3 v = buildingObjects[j].GetComponent<BoxCollider>().ClosestPointOnBounds(pos);
+                    if (Vector3.Distance(v, pos) < Vector3.Distance(vClosest, pos))
+                        vClosest = v;
+                }
+                Gizmos.DrawCube(vClosest, new Vector3(0.5F, 0.5F, 0));
             }
-            Gizmos.DrawCube(vClosest, new Vector3(0.5F, 0.5F, 0));
         }
     }
 
