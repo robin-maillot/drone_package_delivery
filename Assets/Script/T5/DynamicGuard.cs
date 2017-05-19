@@ -37,6 +37,8 @@ public class DynamicGuard : Point
         Gizmos.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + acc.x*100, transform.position.y + acc.y * 100, 20));
     }*/
 
+
+    //Component - General Bias Against walls
     Vector2 ObstacleAvoid()
     {
         var avoid = new Vector2(0F,0F);
@@ -94,6 +96,7 @@ public class DynamicGuard : Point
         return avoid;
     }
 
+    //Component - Not in current use
     Vector2 AvoidWalls()
     {
         float dist = Mathf.Infinity;
@@ -121,6 +124,8 @@ public class DynamicGuard : Point
         return avoid;
     }
 
+
+    //Component - Pull toward goal/waypoint
     Vector2 GoalComponent()
     {
         var x = this.goalPos[0] - this.transform.position.x;
@@ -130,7 +135,7 @@ public class DynamicGuard : Point
         return comp;
     }
 
-
+    //Component - vector to keep formation
     Vector2 FormationComponent(bool rush)
     {
         float x = 0, y = 0;
@@ -167,6 +172,7 @@ public class DynamicGuard : Point
         return formationError;
     }
 
+    //Used for formation maintanence. Note that I is not used
     float PIDs(float error, int connection, int xy, bool rush) //0 = x, 1 = y
     {
         if (!rush && Ki > 0)
@@ -183,7 +189,7 @@ public class DynamicGuard : Point
         return output;
     }
 
-
+    //Initiates PIDs for the first time
     void InitiatePIDs()
     {
         //int j = 0;
@@ -196,6 +202,7 @@ public class DynamicGuard : Point
         }
     }
 
+    //Function using vector weights to give direction. 
     Vector3 GetInput()
     {
         //var pid: PID;    // Set values in the inspector.
@@ -208,6 +215,7 @@ public class DynamicGuard : Point
         //Debug.Log("Guard ID: " + guardID + ", Error: " + Mathf.Sqrt(Mathf.Pow(obsavoid.x,2) + Mathf.Pow(obsavoid.y,2)));
         //Debug.Log("Guard: "+guardID+" Edge: (" + edgeavoid.x +", "+edgeavoid.y +")");
 
+        //main weights. xMag means the component of x
         var x = goalcomp.x * goalMag + formcomp.x * formMag + obsavoid.x;// + edgeavoid.x;
         var y = goalcomp.y * goalMag + formcomp.y * formMag + obsavoid.y;// + edgeavoid.y;
 
@@ -226,13 +234,14 @@ public class DynamicGuard : Point
             vel *= MAX_SPEED;
         }
 
-        //we're feeding it position + acceleration componenent, which is wrong
+        //Shows directions
         Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), velcolour);
         Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + acc.x, transform.position.y + acc.y, 20), Color.black);
 
         return transform.position + new Vector3(vel.x, vel.y, 0F) * dt;
     }
 
+    //This attempts to get into formation first, before moving
     Vector3 GetInitialInput()
     {
         var formcomp = FormationComponent(true);
@@ -263,6 +272,8 @@ public class DynamicGuard : Point
         return transform.position + new Vector3(vel.x, vel.y, 0F) * dt;
     }
 
+    //This function checks to see whether or not the guards have reached formation on initialization. 
+    //Once it has, it changes the InitialRush variable to false, meaning that the input is now defined by the general GetInput function, not GetInitialInput
     void Formcheck()
     {
         float x = 0, y = 0;
@@ -310,18 +321,17 @@ public class DynamicGuard : Point
         UpdatePosition();
     }
 
-    
+    //Defines the choice of input
     void UpdatePosition()
     {
         float time = totalTime;
         Vector3 input = new Vector3();
         var distance = Vector3.Distance(transform.position, new Vector3(goalPos[0], goalPos[1], transform.position.z));
-        if (inFinalInput == true || distance < GameManager.endRange)
+        if (inFinalInput == true || distance < GameManager.endRange)    //check if in a range of the final location
         {
 
             if (!finished)
-                input = getFinalInputOld();    //Final Input
-                //input = getFinalInputOld();    //Final Input
+                input = getFinalInputOld();    //Final Input (Changed back from Dubins Curves)
             else
             {
                 input = transform.position;
@@ -337,13 +347,13 @@ public class DynamicGuard : Point
         }
         else
         {
-            input = CollisionImminant();
-            if (!collision)
+            input = CollisionImminant();    //This function is the red one that really avoids the walls. Unless we are in the final stretch, we check for collisions. This changes the "collision" variable to true (think like holding a value in a behavoir tree)
+            if (!collision)     //If we don't expect a collision in the walls
             {
-                if(initialRush)
+                if(initialRush) //If trying to get into formation at the start
                 {
                     input = GetInitialInput();
-                    Formcheck();   //not inform, in form
+                    Formcheck();   //Check if in formation (changes initialRush variable)
                 }
                 else
                 {
@@ -358,15 +368,16 @@ public class DynamicGuard : Point
         transform.position = input;
     }
 
-
+    //Checks to see if we will collide with a wall using standard kinematics. 
     Vector3 CollisionImminant()
     {
         //bool collision = false;
         var dt = Time.deltaTime;
 
         var t_col = this.vel.magnitude / MAX_ACCEL;
-        var d = Mathf.Abs(vel.magnitude) * t_col - MAX_ACCEL * t_col * t_col * 0.5;
+        var d = Mathf.Abs(vel.magnitude) * t_col - MAX_ACCEL * t_col * t_col * 0.5; //maximum possible distance travelled
 
+        // we have two seperate cases - if the drone is heading for a wall, and if a drone could potentially hit two walls. This check below looks for that.
         var t_2col = this.vel.magnitude / (Mathf.Sqrt(MAX_ACCEL));  //assumes that polygons are not more than a 90 degree angle
         var d_2poly = Mathf.Abs(vel.magnitude) * t_col - MAX_ACCEL * t_col * t_col * 0.5;
         int poly_colnumber = 0;
@@ -375,7 +386,7 @@ public class DynamicGuard : Point
 
 
         float dist = Mathf.Infinity;
-        if (!collision)
+        if (!collision)     //If we are already expecting a collision, keep the global variables the same (time needed to correct course, negative acceleration, etc.)
         { 
             var dirn = new Vector2(Mathf.Infinity, Mathf.Infinity);
             //foreach (var poly in this.polygons)
@@ -443,22 +454,22 @@ public class DynamicGuard : Point
             if (dist < d + 0.5 && Vector2.Dot(vel, dirn) < 0)
             {
                 collision = true;
-                t_dur = t_col;
-                t_run = 0;
-                coll_acc = dirn;
+                t_dur = t_col;  //time needed to stop trajectory
+                t_run = 0;      //amount of time this has been running
+                coll_acc = dirn;    //direction of collision
                 //Debug.Log("COLLISION IMMINANT: GUARD " + guardID);
                 //Debug.Log("d: " + d + ", dist: " + dist + ", velmag: " + vel.magnitude );
                 //Debug.Log("dirn: " + Vector2.Dot(vel, dirn));
             }
         }
         if (t_run > t_dur)
-            collision = false;
+            collision = false;  //if the amount of time the object has been accelerating is longer than what we mathematically need it to do, we can say that we do not expect a collision any more. 
         if (collision) //can't do else, since we need to check this after the first point
         {
             vel += coll_acc * dt;
             t_run += dt;
             Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), velcolour);
-            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + coll_acc.x, transform.position.y + coll_acc.y, 20), Color.red);
+            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + coll_acc.x, transform.position.y + coll_acc.y, 20), Color.red);  //scary red lines
 
             return transform.position + new Vector3(vel.x, vel.y, 0F) * dt;
         }
@@ -466,11 +477,7 @@ public class DynamicGuard : Point
     }
 
 
-
-
-
-
-
+    //Function borrowed from the internet. Used a few times. 
     Vector3 ClosestPointOnLine(Vector3 vA, Vector3 vB, Vector3 vPoint)
     {
         var vVector1 = vPoint - vA;
@@ -491,7 +498,7 @@ public class DynamicGuard : Point
         return vClosestPoint;
     }
 
-
+    //changes acceleration to have the guards stop at an expected location
     Vector3 getFinalInputOld()
     {
      
@@ -546,6 +553,8 @@ public class DynamicGuard : Point
     private int finalstatus = 0;
     private float theta;
     //private Vector2 prevel;
+
+    //changes acceleration to have the guards stop at an expected location using Dubins curves
     Vector3 getFinalInput()
     {
 
@@ -655,6 +664,8 @@ public class DynamicGuard : Point
         return new Vector3(tx, ty, 20F);// * Time.deltaTime;
     }
 
+
+    //Dubins curves things
     private DubinInput dubinInput(DubinNode near, DubinNode target)
     {
         return DubinUtils.DubinSP(new DubinState(near), new DubinState(target), true);
