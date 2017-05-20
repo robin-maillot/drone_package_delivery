@@ -299,12 +299,13 @@ MonoBehaviour:
   ai: {fileID: 1785505170316712, guid: 92ecb56164d5def4dbbde864797fe4b8, type: 2}
   mapai: {fileID: 1785505170316712, guid: 9b95125bb66c93440b0534a204ed21fe, type: 2}
   camera: {fileID: 1665364587}
+  max_wind: 20
   Kp: 1
   Ki: 0
   Kd: 0.2
   goal: 8
-  form: 8
-  obs: 2
+  form: 6
+  obs: 20
   range: 3
   useSaved: 0
   problem: test_problem.json

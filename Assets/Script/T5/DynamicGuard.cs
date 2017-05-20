@@ -21,9 +21,9 @@ public class DynamicGuard : Point
     public bool initialRush = true;
     public bool finished = false;
     private float finalrad = 0;
-    public float goalMag = 1;
-    public float formMag = 20;
-    public float obsMultiplier = 3;
+    public float goalMag; //1
+    public float formMag; //20
+    public float obsMultiplier ; //3
     public Color velcolour = Color.green;
 
     private float[][] integral;
@@ -84,9 +84,10 @@ public class DynamicGuard : Point
 
             dirn *= Mathf.Pow(obsMultiplier / (dist), 2);
 
+
             if (Vector2.Dot(vel, dirn) < 0 && dist < 5)
             {
-                Debug.Log("Distance: " + dist + " dirn " + dirn + " Dot: " + Vector2.Dot(vel, dirn));
+                //Debug.Log("Distance: " + dist + " dirn " + dirn + " Dot: " + Vector2.Dot(vel, dirn));
                 Debug.DrawLine(transform.position, transform.position + new Vector3(dirn.x, dirn.y, 0F), Color.magenta);
                 avoid += dirn;
             }
@@ -361,7 +362,10 @@ public class DynamicGuard : Point
                     input = GetInput();     //Regurlar Input
                 }
             }
-            
+
+            // Add force of wind (assumes acc = F, ie m = 1)
+            var dt = Time.deltaTime;
+            input += GameManager.wind * dt*dt;
         }
         
 
@@ -407,116 +411,6 @@ public class DynamicGuard : Point
         }
         return new Vector3(0F, 0F, 0F);
     }
-
-
-    //Checks to see if we will collide with a wall using standard kinematics. 
-    Vector3 CollisionImminant2()
-    {
-        //bool collision = false;
-        var dt = Time.deltaTime;
-
-        var t_col = this.vel.magnitude / MAX_ACCEL;
-        var d = Mathf.Abs(vel.magnitude) * t_col - MAX_ACCEL * t_col * t_col * 0.5; //maximum possible distance travelled
-
-        // we have two seperate cases - if the drone is heading for a wall, and if a drone could potentially hit two walls. This check below looks for that.
-        var t_2col = this.vel.magnitude / (Mathf.Sqrt(MAX_ACCEL));  //assumes that polygons are not more than a 90 degree angle
-        var d_2poly = Mathf.Abs(vel.magnitude) * t_col - MAX_ACCEL * t_col * t_col * 0.5;
-        int poly_colnumber = 0;
-        var sign = 1;
-        Vector2[] dir_2poly = new Vector2[2];
-
-
-        float dist = Mathf.Infinity;
-        if (!collision)     //If we are already expecting a collision, keep the global variables the same (time needed to correct course, negative acceleration, etc.)
-        { 
-            var dirn = new Vector2(Mathf.Infinity, Mathf.Infinity);
-            //foreach (var poly in this.polygons)
-            for(int p = 0; p < polygons.Length+1; p++)
-            {
-                Vector2[] poly;
-                if (p < polygons.Length)
-                    poly = polygons[p];
-                else
-                {
-                    poly = boundaryPolygon;
-                    sign = -1;
-
-                }
-                for (int i = 0; i < poly.Length; i++)   //each poly defines a new polygon, only need to return closest side
-                {
-                    int j = (i + 1)% poly.Length;
-                    var closestpnt = ClosestPointOnLine(new Vector3(poly[i][0], poly[i][1], 0F), new Vector3(poly[j][0], poly[j][1], 0F), transform.position);
-                    var dist2 = Vector2.Distance(transform.position, closestpnt);
-                    if(dist2 < d_2poly) //might have collisions with two polygons
-                    {
-                        var dirp = new Vector2(poly[j][1] - poly[i][1], poly[i][0] - poly[j][0]); //This is backwards. It works and I don't know why
-                        dirp.Normalize();
-                        dirp *= MAX_ACCEL;
-                        dir_2poly[poly_colnumber] = dirp;
-                        poly_colnumber++;
-                        if (poly_colnumber > 1)
-                            break;
-                    }
-
-                    if (dist2 < dist)  //check shortest distance
-                    {
-                        dist = dist2;
-                        if (closestpnt == new Vector3(poly[i][0], poly[i][1], 0F))  //if closest point is the vertices, it is not between the vertices
-                        {
-                            dirn = new Vector2(this.transform.position.x - poly[i][0], this.transform.position.y - poly[i][1]);
-                        }
-                        else if (closestpnt == new Vector3(poly[j][0], poly[j][1], 0F))  //if closest point is the vertices, it is not between the vertices
-                        {
-                            dirn = new Vector2(this.transform.position.x - poly[j][0], this.transform.position.y - poly[j][1]); // might need to swap one of these
-                        }
-                        else
-                        {
-                            dirn = new Vector2(poly[j][1] - poly[i][1], poly[i][0] - poly[j][0]); //This is backwards. It works and I don't know why
-                        }
-                        dirn.Normalize();
-                        dirn *= MAX_ACCEL * sign;
-                    }
-                }
-                if (poly_colnumber > 1)
-                {
-                    collision = true;
-                    t_dur = t_2col;
-                    t_run = 0;
-                    dirn = dir_2poly[0] + dir_2poly[1];
-                    dirn.Normalize();
-                    dirn *= MAX_ACCEL;
-                    coll_acc = dirn;
-                    Debug.Log("TWO COLLISIONS IMMINANT! FUCK!");
-                    Debug.Log("btw the guard is number " + guardID);
-                    break;
-                }
-            }
-            //Debug.Log("dist: " + dist + " Guard: " + guardID);
-            if (dist < d + 0.5 && Vector2.Dot(vel, dirn) < 0)
-            {
-                collision = true;
-                t_dur = t_col;  //time needed to stop trajectory
-                t_run = 0;      //amount of time this has been running
-                coll_acc = dirn;    //direction of collision
-                //Debug.Log("COLLISION IMMINANT: GUARD " + guardID);
-                //Debug.Log("d: " + d + ", dist: " + dist + ", velmag: " + vel.magnitude );
-                //Debug.Log("dirn: " + Vector2.Dot(vel, dirn));
-            }
-        }
-        if (t_run > t_dur)
-            collision = false;  //if the amount of time the object has been accelerating is longer than what we mathematically need it to do, we can say that we do not expect a collision any more. 
-        if (collision) //can't do else, since we need to check this after the first point
-        {
-            vel += coll_acc * dt;
-            t_run += dt;
-            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), velcolour);
-            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + coll_acc.x, transform.position.y + coll_acc.y, 20), Color.red);  //scary red lines
-
-            return transform.position + new Vector3(vel.x, vel.y, 0F) * dt;
-        }
-        return new Vector3(0F, 0F, 0F);
-    }
-
 
     //Function borrowed from the internet. Used a few times. 
     Vector3 ClosestPointOnLine(Vector3 vA, Vector3 vB, Vector3 vPoint)

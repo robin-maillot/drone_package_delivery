@@ -15,6 +15,7 @@ public class GameManager : MonoBehaviour {
     public GameObject ai;
     public GameObject mapai;
     public GameObject camera;
+    public float max_wind;
     public float Kp, Ki, Kd;
     public float goal = 1, form = 20, obs = 3, range = 2;
     public static float endRange = 2;
@@ -27,6 +28,7 @@ public class GameManager : MonoBehaviour {
     public static int numberofGuards;
     private int itemcount;
     public static float[] dist;
+    public static Vector3 wind;
 
     private List<GameObject> buildingObjects = new List<GameObject>();
 
@@ -74,6 +76,7 @@ public class GameManager : MonoBehaviour {
                         vClosest = v;
                 }
                 Gizmos.DrawCube(vClosest, new Vector3(0.5F, 0.5F, 0));
+                Gizmos.DrawWireSphere(new Vector3(0, 0, -10), 5);
             }
         }
     }
@@ -453,11 +456,27 @@ public class GameManager : MonoBehaviour {
 
     }
 
+    // Updates wind direction and magnitude using a gaussian distribution and draws it on the map
+    void updateWind()
+    {
+        Vector2 w = Random.onUnitSphere;
+        float theta = Vector3.Angle(new Vector3(1, 0, 0),wind);
+        //Debug.Log(Vector3.Angle(new Vector3(1, 0, 0), new Vector3(0, 1, 0)));
+        float new_theta_rad = Mathf.Deg2Rad*Utils.gaussianRandom(theta, 1);
+        float new_mag = Utils.gaussianRandom(wind.magnitude, max_wind / 20);
+        //wind = new Vector3(w.x, w.y, 0).normalized * max_wind;
+        if(new_mag>max_wind)
+            new_mag = max_wind;
+        wind = new Vector3(Mathf.Cos(new_theta_rad), Mathf.Sin(new_theta_rad),0)*new_mag;
+        Debug.DrawLine(new Vector3(0, 0, -10),new Vector3(wind.x * 5 / max_wind, wind.y * 5 / max_wind, -10), Color.green);
+    }
+
     // Update is called once per frame
     private float totalTime = 0F;
     private float[] error = new float[numberofGuards];
     void Update()
     {
+        updateWind();
         for (int i = 0; i < buildingObjects.Count; i++)
         {
             for (int j = 0; j < numberofGuards; j++)
