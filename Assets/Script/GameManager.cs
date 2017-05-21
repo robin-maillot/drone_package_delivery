@@ -75,12 +75,32 @@ public class GameManager : MonoBehaviour {
             {
                 Vector3 pos = point[i].transform.position;
                 Vector3 vClosest = new Vector3(100, 100, 100);
+                Vector3 dirn;
+                var distance = Mathf.Infinity;
                 for (int j = 0; j < buildingObjects.Count; j++)
                 {
-                    Vector3 v = buildingObjects[j].GetComponent<BoxCollider>().ClosestPointOnBounds(pos);
-                    if (Vector3.Distance(v, pos) < Vector3.Distance(vClosest, pos))
-                        vClosest = v;
+                    Vector3 pnt = buildingObjects[j].GetComponent<BoxCollider>().ClosestPointOnBounds(pos);
+                    RaycastHit hit;
+                    Ray downRay = new Ray(pos, pnt - pos);
+                    //Debug.DrawLine(pos, pnt - pos, Color.yellow);
+                    var v = Mathf.Infinity;
+                    if (Physics.Raycast(downRay, out hit))
+                    {
+                        v = hit.distance;
+                        Debug.Log("Distance: "+ v);
+                        if (v < distance)
+                        {
+                            distance = v;
+                            dirn = pnt - pos;
+                            dirn.Normalize();
+                            vClosest = dirn*distance+ pos;
+                        }
+                            
+                    }
+
+                        
                 }
+                Debug.DrawLine(pos, vClosest, Color.cyan);
                 Gizmos.DrawCube(vClosest, new Vector3(0.5F, 0.5F, 0));
                 Gizmos.DrawWireSphere(new Vector3(0, 0, -10), 5);
             }
@@ -528,7 +548,7 @@ public class GameManager : MonoBehaviour {
     // Updates wind direction and magnitude using a gaussian distribution and draws it on the map
     void updateWind()
     {
-        Vector2 w = Random.onUnitSphere;
+        Vector2 w = UnityEngine.Random.onUnitSphere;
         float theta = Vector3.Angle(new Vector3(1, 0, 0),wind);
         //Debug.Log(Vector3.Angle(new Vector3(1, 0, 0), new Vector3(0, 1, 0)));
         float new_theta_rad = Mathf.Deg2Rad*Utils.gaussianRandom(theta, 1);
@@ -567,12 +587,28 @@ public class GameManager : MonoBehaviour {
         {
             Vector3 pos = point[i].transform.position;
             Vector3 vClosest = new Vector3(100, 100, 100);
+            Vector3 dirn;
+            var distance = Mathf.Infinity;
             for (int j = 0; j < buildingObjects.Count; j++)
             {
-                Vector3 v = buildingObjects[j].GetComponent<BoxCollider>().ClosestPointOnBounds(pos);
-                if (Vector3.Distance(v, pos) < Vector3.Distance(vClosest, pos))
-                    vClosest = v;
+                Vector3 pnt = buildingObjects[j].GetComponent<BoxCollider>().ClosestPointOnBounds(pos);
+                RaycastHit hit;
+                Ray downRay = new Ray(pos, pnt - pos);
+                //Debug.DrawLine(pos, pnt - pos, Color.yellow);
+                var v = Mathf.Infinity;
+                if (Physics.Raycast(downRay, out hit))
+                {
+                    v = hit.distance;
+                    Debug.Log("Distance: " + v);
+                    if (v < distance)
+                    {
+                        distance = v;
+                        dirn = pnt - pos;
+                        dirn.Normalize();
+                        vClosest = dirn * distance + pos;
+                    }
 
+                }
                 // Pause when collision
                 point[i].closestBuildingPoint = vClosest;
                 if (buildingObjects[j].GetComponent<BoxCollider>().bounds.Contains(pos))
@@ -580,6 +616,8 @@ public class GameManager : MonoBehaviour {
                     Debug.Log("Drone " + i + " is in building " + j);
                     //Debug.Break();
                 }
+
+
             }
         }
 

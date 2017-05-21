@@ -235,8 +235,8 @@ public class Drone : Point
         }
 
         //Shows directions
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), velcolour);
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + acc.x, transform.position.y + acc.y, 20), Color.black);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, transform.position.z), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, transform.position.z), velcolour);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, transform.position.z), new Vector3(transform.position.x + acc.x, transform.position.y + acc.y, transform.position.z), Color.black);
 
         return transform.position + new Vector3(vel.x, vel.y, 0F) * dt;
     }
@@ -267,8 +267,8 @@ public class Drone : Point
         }
 
         //we're feeding it position + acceleration componenent, which is wrong
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), velcolour);
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + acc.x, transform.position.y + acc.y, 20), Color.black);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, transform.position.z), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, transform.position.z), velcolour);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, transform.position.z), new Vector3(transform.position.x + acc.x, transform.position.y + acc.y, transform.position.z), Color.black);
         return transform.position + new Vector3(vel.x, vel.y, 0F) * dt;
     }
 
@@ -400,8 +400,8 @@ public class Drone : Point
         {
             vel += coll_acc * dt;
             t_run += dt;
-            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), velcolour);
-            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + coll_acc.x, transform.position.y + coll_acc.y, 20), Color.red);
+            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, transform.position.z), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, transform.position.z), velcolour);
+            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, transform.position.z), new Vector3(transform.position.x + coll_acc.x, transform.position.y + coll_acc.y, transform.position.z), Color.red);
 
             return transform.position + new Vector3(vel.x, vel.y, 0F) * dt;
         }
@@ -509,8 +509,8 @@ public class Drone : Point
         {
             vel += coll_acc * dt;
             t_run += dt;
-            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), velcolour);
-            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + coll_acc.x, transform.position.y + coll_acc.y, 20), Color.red);  //scary red lines
+            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, transform.position.z), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, transform.position.z), velcolour);
+            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, transform.position.z), new Vector3(transform.position.x + coll_acc.x, transform.position.y + coll_acc.y, transform.position.z), Color.red);  //scary red lines
 
             return transform.position + new Vector3(vel.x, vel.y, 0F) * dt;
         }
@@ -583,8 +583,8 @@ public class Drone : Point
         }
 
         //we're feeding it position + acceleration componenent, which is wrong
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), velcolour);
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + acc.x, transform.position.y + acc.y, 20), Color.red);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, transform.position.z), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, transform.position.z), velcolour);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, transform.position.z), new Vector3(transform.position.x + acc.x, transform.position.y + acc.y, transform.position.z), Color.red);
 
         return new Vector3(tx, ty, 20F);// * Time.deltaTime;
     }
@@ -699,8 +699,8 @@ public class Drone : Point
         }
 
         //we're feeding it position + acceleration componenent, which is wrong
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), velcolour);
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + sonic.x, transform.position.y + sonic.y, 20), Color.red);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, transform.position.z), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, transform.position.z), velcolour);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, transform.position.z), new Vector3(transform.position.x + sonic.x, transform.position.y + sonic.y, transform.position.z), Color.red);
 
         return new Vector3(tx, ty, 20F);// * Time.deltaTime;
     }
