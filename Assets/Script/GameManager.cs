@@ -5,6 +5,8 @@ using UnityEngine;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine.UI;
+using System.Linq;
+using System;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class GameManager : MonoBehaviour {
@@ -27,8 +29,12 @@ public class GameManager : MonoBehaviour {
     public static int numberofGuards;
     private int itemcount;
     public static float[] dist;
+    int buildingnumber = 0;
 
     private List<GameObject> buildingObjects = new List<GameObject>();
+    private List<Vector3> buildingPivots = new List<Vector3>();
+
+    public Material newMaterialRef;
 
     private void OnDrawGizmos()
     {
@@ -81,101 +87,126 @@ public class GameManager : MonoBehaviour {
     private GameObject GeneratePolygonMesh(float[][] polygon)
     {
 
-        float xmin = Mathf.Infinity;
-        float xmax = -Mathf.Infinity;
-        float ymin = Mathf.Infinity;
-        float ymax = -Mathf.Infinity;
-
-        int l = polygon.Length;
-        Vector2[] polygon2D = new Vector2[l];
-        Vector3[] vertices = new Vector3[l * 3];
-
-        for (int i = 0; i < l; i++)
-        {
-            if (polygon[i][0] < xmin)
-                xmin = polygon[i][0];
-            if (polygon[i][0] > xmax)
-                xmax = polygon[i][0];
-            if (polygon[i][1] < ymin)
-                ymin = polygon[i][1];
-            if (polygon[i][1] > ymax)
-                ymax = polygon[i][1];
-            polygon2D[i] = new Vector2(polygon[i][0], polygon[i][1]);
-        }
-        Triangulator tr = new Triangulator(polygon2D);
-        int[] indices = tr.Triangulate();
-
-        // Create the Vector3 vertices
-        Vector3[] polygon3D = new Vector3[l];
-        for (int i = 0; i < l; i++)
-        {
-            vertices[2*l+i] = new Vector3(polygon2D[i].x, polygon2D[i].y, 0);
-        }
-
-
-        for (int i = 0; i < l; i++)
-        {
-            vertices[i] = new Vector3(polygon[i][0], polygon[i][1],0);
-            vertices[i+ l] = new Vector3(polygon[i][0], polygon[i][1], polygon[i][2]);
-        }
-
-        int[] triangles = new int[3*(4*l)+indices.Length];
-        for (int i = 0; i < l; i++)
-        {
-            triangles[3 * i] = i;
-            triangles[(3 * i) + 1] = (i+1)%l;
-            triangles[(3 * i) + 2] = i+l;
-            triangles[3 *(i+l)] = (i+1)%l;
-            triangles[(3 * (i+l)) + 2] = i+l;
-            triangles[(3 * (i+l)) + 1] = ((i + 1)%l + l);
-
-            triangles[3*2*l+3 * i] = i;
-            triangles[3*2 * l + (3 * i) + 2] = (i + 1) % l;
-            triangles[3*2 * l + (3 * i) + 1] = i + l;
-            triangles[3*2 * l + 3 * (i + l)] = (i + 1) % l;
-            triangles[3*2 * l + (3 * (i + l)) + 1] = i + l;
-            triangles[3*2 * l + (3 * (i + l)) + 2] = ((i + 1) % l + l);
-
-            /*
-            triangles = new int[3 * (l - 2)];
-            for (int i = 0; i < l - 2; i++)
-            {
-                triangles[3 * i] = 0;
-                triangles[(3 * i) + 1] = (i+1) % l;
-                triangles[(3 * i) + 2] = (i + 2) % l;
-                Debug.Log(i + " " + (l + i) + " " + (i + 1));
-            }
-            */
-        }
-        for (int i = 0; i < indices.Length; i++)
-        {
-            triangles[3 * (4 * l) +i] = indices[i];
-        }
-
-        // Create the mesh
-        Mesh msh = new Mesh();
-        msh.vertices = vertices;
-        msh.triangles = triangles;
-        msh.RecalculateNormals();
-        msh.RecalculateBounds();
-
         GameObject obj = new GameObject();
 
-        // Set up game object with mesh;
-        obj.AddComponent(typeof(MeshRenderer));
-        MeshFilter filter = obj.AddComponent(typeof(MeshFilter)) as MeshFilter;
-        filter.mesh = msh;
+        MeshFilter filter = obj.AddComponent<MeshFilter>();
+        Mesh mesh = filter.mesh;
+        mesh.Clear();
 
-        Vector2 center = Vector2.zero;
-        for (int i = 0; i < l; i++)
+        float length = polygon[0][0];
+        float width = polygon[0][1];
+        float height = polygon[0][2];
+
+        #region Vertices
+        Vector3 p0 = new Vector3(-length * .5f, -width * .5f, height * .5f);
+        Vector3 p1 = new Vector3(length * .5f, -width * .5f, height * .5f);
+        Vector3 p2 = new Vector3(length * .5f, -width * .5f, -height * .5f);
+        Vector3 p3 = new Vector3(-length * .5f, -width * .5f, -height * .5f);
+
+        Vector3 p4 = new Vector3(-length * .5f, width * .5f, height * .5f);
+        Vector3 p5 = new Vector3(length * .5f, width * .5f, height * .5f);
+        Vector3 p6 = new Vector3(length * .5f, width * .5f, -height * .5f);
+        Vector3 p7 = new Vector3(-length * .5f, width * .5f, -height * .5f);
+
+        Vector3[] vertices = new Vector3[]
         {
-            center += polygon2D[i];
-        }
+	        
+	        p0, p1, p2, p3, // Bottom
+	        p7, p4, p0, p3, // Left 
+	        p4, p5, p1, p0, // Front 
+	        p6, p7, p3, p2, // Back
+	        p5, p6, p2, p1, // Right
+	        p7, p6, p5, p4  // Top
+        };
+        #endregion
+
+        #region Normales
+        Vector3 up = Vector3.up;
+        Vector3 down = Vector3.down;
+        Vector3 front = Vector3.forward;
+        Vector3 back = Vector3.back;
+        Vector3 left = Vector3.left;
+        Vector3 right = Vector3.right;
+
+        Vector3[] normales = new Vector3[]
+        {
+	        down, down, down, down, // Bottom
+	        left, left, left, left, // Left 
+	        front, front, front, front, // Front
+	        back, back, back, back, // Back
+	        right, right, right, right, // Right
+	        up, up, up, up  // Top
+        };
+        #endregion
+
+        #region UVs
+        Vector2 _00 = new Vector2(0f, 0f);
+        Vector2 _10 = new Vector2(1f, 0f);
+        Vector2 _01 = new Vector2(0f, 1f);
+        Vector2 _11 = new Vector2(1f, 1f);
+
+        Vector2[] uvs = new Vector2[]
+        {
+	        _11, _01, _00, _10,  // Bottom  
+	        _11, _01, _00, _10, // Left
+	        _11, _01, _00, _10, // Front
+	        _11, _01, _00, _10, // Back   
+	        _11, _01, _00, _10, // Right
+	        _11, _01, _00, _10, // Top
+        };
+        #endregion
+
+        #region Triangles
+        int[] triangles = new int[]
+        {
+	        // Bottom
+	        3, 1, 0,
+            3, 2, 1,			
+ 
+	        // Left
+	        3 + 4 * 1, 1 + 4 * 1, 0 + 4 * 1,
+            3 + 4 * 1, 2 + 4 * 1, 1 + 4 * 1,
+ 
+	        // Front
+	        3 + 4 * 2, 1 + 4 * 2, 0 + 4 * 2,
+            3 + 4 * 2, 2 + 4 * 2, 1 + 4 * 2,
+ 
+	        // Back
+	        3 + 4 * 3, 1 + 4 * 3, 0 + 4 * 3,
+            3 + 4 * 3, 2 + 4 * 3, 1 + 4 * 3,
+ 
+	        // Right
+	        3 + 4 * 4, 1 + 4 * 4, 0 + 4 * 4,
+            3 + 4 * 4, 2 + 4 * 4, 1 + 4 * 4,
+ 
+	        // Top
+	        3 + 4 * 5, 1 + 4 * 5, 0 + 4 * 5,
+            3 + 4 * 5, 2 + 4 * 5, 1 + 4 * 5,
+        };
+        #endregion
+
+        mesh.vertices = vertices;
+        mesh.normals = normales;
+        mesh.uv = uvs;
+        mesh.triangles = triangles;
+
+        mesh.RecalculateBounds();
+
+        obj.AddComponent(typeof(MeshRenderer));
+        obj.GetComponent<MeshRenderer>().material.SetColor("_Color", Color.gray);
+        
         obj.transform.parent = camera.transform;
-        obj.GetComponent<MeshRenderer>().material.SetColor("_Color", Color.black);
+        obj.name = "Building" + buildingnumber;
+        buildingnumber++;
+
+       
         BoxCollider boxCollider = obj.AddComponent<BoxCollider>();
-        boxCollider.size = new Vector3(Mathf.Abs(xmax -xmin), Mathf.Abs(ymax -ymin), Mathf.Abs(polygon[l - 1][2]));
-        boxCollider.center = new Vector3(center.x/l,center.y/l,polygon[l-1][2]/2);
+        //boxCollider.GetComponent<MeshRenderer>().material = newMaterialRef;
+
+        boxCollider.size = new Vector3(length, width, height);
+
+        obj.transform.position = new Vector3(polygon[1][0], polygon[1][1], polygon[1][2]);
+
         return obj;
     }
 
@@ -191,6 +222,7 @@ public class GameManager : MonoBehaviour {
         point = point ? point : player.GetComponent<KinematicGuard>();
         point = point ? point : player.GetComponent<DynamicGuard>();
         point = point ? point : player.GetComponent<DynamicCar>();
+        point = point ? point : player.GetComponent<Drone>();
         return point;
     }
 
@@ -310,7 +342,9 @@ public class GameManager : MonoBehaviour {
         Vector2[][] inputPolygon = new Vector2[polycount][];
         //gets each polygon opject
         Debug.Log(input.polygon);
-        foreach (var pair in input.polygon)
+        //float[][] buildingpivots = new float[polycount][];
+        
+        foreach (var pair in input.polygon) //need to add rotation to json
         {
             if (pair.Key.StartsWith("polygon"))         //checks if name is polygon
             {
@@ -325,14 +359,49 @@ public class GameManager : MonoBehaviour {
                     vertices2D[i] = new Vector2(polygon[i][0], polygon[i][1]);      //puts float value to vertex
                 }
                 inputPolygon[polygonCnt++] = vertices2D;
-            } 
+
+                var tmp = new Vector3( 0F, 0F, 0F );
+                for (int i = 0; i < polygon.Length; i++)
+                {
+                    tmp[0] += polygon[i][0];
+                    tmp[1] += polygon[i][1];
+                    tmp[2] += polygon[i][2];
+                }
+                tmp[0] /= polygon.Length;
+                tmp[1] /= polygon.Length;
+                tmp[2] /= polygon.Length;
+                buildingPivots.Add(tmp);
+            }
+        }
+        foreach (var pair in input.polygon) //need to add rotation to json
+        {
+            if (pair.Key.EndsWith("_rot"))
+            {
+                var buildnum = pair.Key;
+                int objnum = Int32.Parse(buildnum.Substring(4, 1));
+                Debug.Log("hyperderp");
+                Debug.Log(buildnum);
+                Debug.Log(transform.position);
+                float[] rot = pair.Value.ToObject<float[]>();
+
+                buildingObjects[objnum].transform.rotation = Quaternion.Euler(rot[0], rot[1], rot[2]);
+                Debug.Log(transform.position);
+
+                //buildingObjects[objnum].transform.Rotate(new Vector3(rot[0], rot[1], rot[2]), Space.Self);
+                /*buildingObjects[objnum].transform.RotateAround(buildingPivots[objnum], transform.right, rot[0]);
+
+                buildingObjects[objnum].transform.RotateAround(buildingPivots[objnum], transform.forward, rot[1]);
+                buildingObjects[objnum].transform.RotateAround(buildingPivots[objnum], transform.up, rot[2]);*/
+            }
         }
         map.polygons = inputPolygon;
 
+        //buildingObjects[0].transform.Rotate(new Vector3(45F, 0F, 0F)); //pivot over x, y, z
+
         //get start positions of guards. Assumes:
-                        //Number of guards = number of start pos
-                        //Guard start & end pos arrive in same order
-                        //Can throw this into above forloop later (but it's nice to have seperate)
+        //Number of guards = number of start pos
+        //Guard start & end pos arrive in same order
+        //Can throw this into above forloop later (but it's nice to have seperate)
         float[][] start_positions = new float[numberofGuards][];
         int grdID = 0;
         foreach (var pair in input.polygon)
@@ -458,6 +527,10 @@ public class GameManager : MonoBehaviour {
     private float[] error = new float[numberofGuards];
     void Update()
     {
+
+        buildingObjects[4].transform.Rotate(Vector3.forward * Time.deltaTime*2f);
+        buildingObjects[2].transform.Translate(Vector3.down * Time.deltaTime);
+
         for (int i = 0; i < buildingObjects.Count; i++)
         {
             for (int j = 0; j < numberofGuards; j++)
@@ -491,7 +564,6 @@ public class GameManager : MonoBehaviour {
                 }
             }
         }
-
 
         if (UnityEditor.SceneView.sceneViews.Count > 0)
         {
