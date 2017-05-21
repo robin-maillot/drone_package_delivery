@@ -26,4 +26,5 @@ public class Input2
 
     [JsonExtensionData]
     public IDictionary<string, Newtonsoft.Json.Linq.JToken> polygon;
+    //public IDictionary<string, Newtonsoft.Json.Linq.JToken> poly_rot;
 }

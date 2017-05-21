@@ -40,14 +40,14 @@ public class T5_InfoBoard : MonoBehaviour
             if (gObj)
             {
                 pos[i] = gObj.transform.position;
-                goalpos[i] = gObj.GetComponent<DynamicGuard>().goalPos;
+                goalpos[i] = gObj.GetComponent<Drone>().goalPos;
 
-                if (rushover || !gObj.GetComponent<DynamicGuard>().initialRush)
+                if (rushover || !gObj.GetComponent<Drone>().initialRush)
                 {
                     rushover = true;
-                    gObj.GetComponent<DynamicGuard>().initialRush = false;
+                    gObj.GetComponent<Drone>().initialRush = false;
                 }
-                if (gObj.GetComponent<DynamicGuard>().finished)
+                if (gObj.GetComponent<Drone>().finished)
                     numberFin++;
             }
         }
