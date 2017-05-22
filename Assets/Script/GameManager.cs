@@ -597,8 +597,8 @@ public class GameManager : MonoBehaviour {
         moving_camera.transform.LookAt(packagePos + packageSpeed + packageSpeed.normalized, new Vector3(0, 0, -1));
         if (UnityEditor.SceneView.sceneViews.Count > 0)
         {
-            UnityEditor.SceneView sceneView = (UnityEditor.SceneView)UnityEditor.SceneView.sceneViews[0];
-            sceneView.Focus();
+            //UnityEditor.SceneView sceneView = (UnityEditor.SceneView)UnityEditor.SceneView.sceneViews[0];
+            //sceneView.Focus();
         }
     }
 }
