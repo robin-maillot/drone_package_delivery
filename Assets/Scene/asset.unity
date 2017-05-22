@@ -300,13 +300,13 @@ MonoBehaviour:
   mapai: {fileID: 1785505170316712, guid: 9b95125bb66c93440b0534a204ed21fe, type: 2}
   camera: {fileID: 1665364587}
   moving_camera: {fileID: 1021170843}
-  max_wind: 20
+  max_wind: 5
   Kp: 1
   Ki: 0
   Kd: 0.2
-  goal: 8
-  form: 10
-  obs: 20
+  goal: 100
+  form: 1
+  obs: 10
   range: 3
   useSaved: 0
   problem: test_problem_newdiag.json

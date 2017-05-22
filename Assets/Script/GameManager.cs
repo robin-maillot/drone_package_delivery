@@ -39,8 +39,12 @@ public class GameManager : MonoBehaviour {
     private Vector3 packagePos;
     private Vector3 packageSpeed;
     private Vector3 packageGoal;
-    public Material newMaterialRef;
+    private List<Vector3> packageWaypoints = new List<Vector3>();
+    private List<float> formation_sizes = new List<float>();
 
+    public Material newMaterialRef;
+    private Vector3[] drone_offset_positions = new Vector3[4];
+    private int currentCheckpoint = 0;
     private void OnDrawGizmos()
     {
         for (int i = 0; i < point.Length; i++)
@@ -80,8 +84,13 @@ public class GameManager : MonoBehaviour {
                 Vector3 vClosest = point[i].closestBuildingPoint;
                 Debug.DrawLine(pos, vClosest, Color.cyan);
                 Gizmos.DrawCube(vClosest, new Vector3(0.5F, 0.5F, 0));
-                Gizmos.DrawWireSphere(new Vector3(0, 0, -10), 5);
             }
+        }
+        Gizmos.DrawWireSphere(new Vector3(0, 0, -10), 5);
+        Gizmos.color = Color.green;
+        foreach (Vector3 w in packageWaypoints)
+        {
+            Gizmos.DrawCube(w, new Vector3(0.5F, 0.5F, 0.5F));
         }
     }
 
@@ -452,6 +461,27 @@ public class GameManager : MonoBehaviour {
                 grdID++;
             }
         }
+        foreach (var pair in input.polygon)
+        {
+            if (pair.Key.StartsWith("package_waypoints"))
+            {
+                //              Debug.Log(pair.Key + " Number of Guards: " + grdID);
+                float[][] waypoints = pair.Value.ToObject<float[][]>();
+                foreach (float[] waypoint in waypoints)
+                {
+                    Vector3 w = new Vector3(waypoint[0],waypoint[1],waypoint[2]);
+                    packageWaypoints.Add(w);
+                    formation_sizes.Add(waypoint[3]);
+                    Debug.Log("Waypoint: " + w);
+                }
+            }
+        }
+        drone_offset_positions[0] = new Vector3(-formation_sizes[currentCheckpoint]/2, -formation_sizes[currentCheckpoint] / 2,0);
+        drone_offset_positions[1] = new Vector3(formation_sizes[currentCheckpoint] / 2, -formation_sizes[currentCheckpoint] / 2, 0);
+        drone_offset_positions[2] = new Vector3(formation_sizes[currentCheckpoint] / 2, formation_sizes[currentCheckpoint] / 2, 0);
+        drone_offset_positions[3] = new Vector3(-formation_sizes[currentCheckpoint] / 2, formation_sizes[currentCheckpoint] / 2, 0);
+
+
 
         float[][] items = new float[itemcount][];
         grdID = 0;
@@ -489,7 +519,10 @@ public class GameManager : MonoBehaviour {
             //point[i].startPos = input.start_pos; //need to update for multiple
             point[i].startPos = start_positions[i];
             point[i].transform.position = new Vector3(start_positions[i][0], start_positions[i][1], start_positions[i][2]);
-            point[i].goalPos = end_positions[i];
+            //point[i].goalPos = end_positions[i];
+            Vector3 goalV = drone_offset_positions[i] + packageWaypoints[currentCheckpoint];
+
+            point[i].goalPos = new float[] { goalV.x,goalV.y,goalV.z };
             point[i].startVel = input.start_vel;
             point[i].goalVel = input.goal_vel;
 
@@ -527,8 +560,8 @@ public class GameManager : MonoBehaviour {
             {
                 if (j != i)
                 {
-                    var x = point[j].goalPos[0] - point[i].goalPos[0];
-                    var y = point[j].goalPos[1] - point[i].goalPos[1];
+                    var x = formation_sizes[currentCheckpoint];
+                    var y = formation_sizes[currentCheckpoint];
                     point[i].formation.Add(new Vector2(x, y));
                 }
             }
@@ -564,6 +597,37 @@ public class GameManager : MonoBehaviour {
         Debug.DrawLine(new Vector3(0, 0, -10),new Vector3(wind.x * 5 / max_wind, wind.y * 5 / max_wind, -10), Color.green);
     }
 
+    void updateCurrentCheckpoint()
+    {
+        if (currentCheckpoint < (packageWaypoints.Count - 1)){
+            float d = Vector3.Distance(packagePos, packageWaypoints[currentCheckpoint]);
+            if (d < formation_sizes[currentCheckpoint] / 2)
+            {
+                currentCheckpoint += 1;
+                drone_offset_positions[0] = new Vector3(-formation_sizes[currentCheckpoint] / 2, -formation_sizes[currentCheckpoint] / 2, 0);
+                drone_offset_positions[1] = new Vector3(formation_sizes[currentCheckpoint] / 2, -formation_sizes[currentCheckpoint] / 2, 0);
+                drone_offset_positions[2] = new Vector3(formation_sizes[currentCheckpoint] / 2, formation_sizes[currentCheckpoint] / 2, 0);
+                drone_offset_positions[3] = new Vector3(-formation_sizes[currentCheckpoint] / 2, formation_sizes[currentCheckpoint] / 2, 0);
+                for (int i = 0; i < numberofGuards; i++)
+                {
+                    Vector3 goalV = drone_offset_positions[i] + packageWaypoints[currentCheckpoint];
+                    point[i].goalPos = new float[] { goalV.x, goalV.y, goalV.z };
+                    point[i].formation = new List<Vector3>();
+                    for (int j = 0; j < numberofGuards; j++)
+                    {
+                        if (j != i)
+                        {
+                            var x = formation_sizes[currentCheckpoint];
+                            var y = formation_sizes[currentCheckpoint];
+                            point[i].formation.Add(new Vector2(x, y));
+                        }
+                    }
+                }
+            }
+                
+        }
+    }
+
     // Update is called once per frame
     private float totalTime = 0F;
     private float[] error = new float[numberofGuards];
@@ -573,6 +637,7 @@ public class GameManager : MonoBehaviour {
         Vector3 newPackagePos = findPackage();
         packageSpeed = newPackagePos - packagePos;
         packagePos = newPackagePos;
+        updateCurrentCheckpoint();
         //buildingObjects[4].transform.Rotate(Vector3.forward * Time.deltaTime*2f);
         //buildingObjects[2].transform.Translate(Vector3.down * Time.deltaTime);
 
@@ -626,8 +691,8 @@ public class GameManager : MonoBehaviour {
         moving_camera.transform.LookAt(moving_camera.transform.position + dir, new Vector3(0, 0, -1));
         if (UnityEditor.SceneView.sceneViews.Count > 0)
         {
-            //UnityEditor.SceneView sceneView = (UnityEditor.SceneView)UnityEditor.SceneView.sceneViews[0];
-            //sceneView.Focus();
+            UnityEditor.SceneView sceneView = (UnityEditor.SceneView)UnityEditor.SceneView.sceneViews[0];
+            sceneView.Focus();
         }
     }
 }
