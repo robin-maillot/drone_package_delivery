@@ -29,9 +29,7 @@ public class Drone : Point
     private float[][] integral;
     private float[][] prev_error;
 
-    /*private Vector2 acc = new Vector2();
-
-    private void OnDrawGizmos()
+    /*private void OnDrawGizmos()
     {
         Gizmos.color = Color.black;  //why the hell do they have the American spelling of color with the English spelling of grey?
         Gizmos.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + acc.x*100, transform.position.y + acc.y * 100, 20));
@@ -43,31 +41,30 @@ public class Drone : Point
     //---------------------------------------- Input Components -------------------------------------------------
     //-----------------------------------------------------------------------------------------------------------
 
-    //Component - General Bias Against walls
+    //Component - General Bias Against obsticles
     Vector3 ObstacleAvoid()
     {
-        var avoid = new Vector2(0F,0F);
+        var avoid = new Vector3(0F,0F, 0F);
         foreach (var poly in this.polygons)     
         {
             float dist = Mathf.Infinity;
 
             // Uses the unity function to calculate closest point
-            Vector2 dirn = new Vector2(this.transform.position.x - this.closestBuildingPoint.x, this.transform.position.y - this.closestBuildingPoint.y); // x and y used to be inversed
-            dist = Mathf.Abs(Vector2.Distance(transform.position, this.closestBuildingPoint));
+            var dirn = this.transform.position - this.closestBuildingPoint; // hopefully OK
+            dist = Mathf.Abs(Vector3.Distance(transform.position, this.closestBuildingPoint));
             dirn.Normalize();                       // ^ p2x - p1x, p1y - p2y
 
             dirn *= Mathf.Pow(obsMultiplier / (dist), 2);
 
-            if (Vector2.Dot(vel, dirn) < 0 && dist < 5)
+            if (Vector3.Dot(vel, dirn) < 0 && dist < 5)
             {
-                Debug.Log("Distance: " + dist + " dirn " + dirn + " Dot: " + Vector2.Dot(vel, dirn));
+                Debug.Log("Distance: " + dist + " dirn " + dirn + " Dot: " + Vector3.Dot(vel, dirn));
                 Debug.DrawLine(transform.position, transform.position + new Vector3(dirn.x, dirn.y, 0F), Color.magenta);
                 avoid += dirn;
             }
                 
 
         }
-        var vavoid = new Vector3(avoid.x, avoid.y, 0F);
         return avoid;
     }
 

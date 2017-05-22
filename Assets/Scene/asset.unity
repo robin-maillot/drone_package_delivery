@@ -305,7 +305,7 @@ MonoBehaviour:
   Ki: 0
   Kd: 0.2
   goal: 8
-  form: 100
+  form: 10
   obs: 20
   range: 3
   useSaved: 0
