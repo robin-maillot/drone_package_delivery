@@ -10,6 +10,7 @@ The implementation is done in **C#** through **Unity**.
 All files modified are contained in [Assets](https://github.com/robin-maillot/drone_package_delivery/tree/master/Assets).
 
 test_problem.json can be used as a reference for how maps are defined.
+test_problem_newdiag.json is the latest map.
 
 | Author              		 | GitHub                                            |
 |:---------------------------|:--------------------------------------------------|
@@ -27,18 +28,19 @@ The algorithm is behaviour based. Each behaviour is transformed into a vector an
 	- Calculate distance to goal (Naive using GPS coordinates)
 - Keep in formation:
 	- ???
-A behavior dedicated to disturbances (ie wind) can be added using a prediction algorithm such as a Kalman Filter 
+Each vector is then multiplied by a certain weight (found empirically).
+Wind is added (using a 2 dimensional gaussian model) as an unknown disturbance and the weight of each drone and the package is also added.
 
 #### Advancement
-- [X] 3D vizualization in Unity
+- [X] 3D vizualization in Unity (dynamic camera also added)
 - [X] 3D collision detection (already implemented in **Unity**)
 
 #### TODO
 
 - [ ] Implement path planning
-	- [ ] Set waypoints
+	- [X] Set waypoints
 	- [ ] Possibility to go above buildings
-	- [ ] Deviate from initial formation
+	- [X] Deviate from initial formation (a new formation can be set at each waypoint)
 	- [ ] Convert PID and behavior based controller to 3D
-- [X] Add disturbances (ie wind)
-- [ ] Add moving obstacles
+- [X] Add disturbances (ie wind and weights)
+- [X] Add moving obstacles
