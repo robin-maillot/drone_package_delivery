@@ -17,6 +17,7 @@ public class GameManager : MonoBehaviour {
     public GameObject ai;
     public GameObject mapai;
     public GameObject camera;
+    public GameObject moving_camera;
     public float max_wind;
     public float Kp, Ki, Kd;
     public float goal = 1, form = 20, obs = 3, range = 2;
@@ -35,7 +36,8 @@ public class GameManager : MonoBehaviour {
     private List<GameObject> buildingObjects = new List<GameObject>();
     private List<Quaternion> buildingRotations = new List<Quaternion>();
     private List<Vector3> buildingPivots = new List<Vector3>();
-
+    private Vector3 packagePos;
+    private Vector3 packageSpeed;
     public Material newMaterialRef;
 
     private void OnDrawGizmos()
@@ -506,7 +508,8 @@ public class GameManager : MonoBehaviour {
                 }
             }
         }
-
+        packagePos = findPackage();
+        packageSpeed = packagePos;
         // Power of Cheetah
 
         //Cheetah.instance.CreateOrLoad(problem, boundaryPolygon, inputPolygon);
@@ -541,6 +544,9 @@ public class GameManager : MonoBehaviour {
     void Update()
     {
         updateWind();
+        Vector3 newPackagePos = findPackage();
+        packageSpeed = newPackagePos - packagePos;
+        packagePos = newPackagePos;
         //buildingObjects[4].transform.Rotate(Vector3.forward * Time.deltaTime*2f);
         //buildingObjects[2].transform.Translate(Vector3.down * Time.deltaTime);
 
@@ -587,7 +593,8 @@ public class GameManager : MonoBehaviour {
 
             }
         }
-
+        moving_camera.transform.position = packagePos - packageSpeed.normalized;
+        moving_camera.transform.LookAt(packagePos + packageSpeed + packageSpeed.normalized, new Vector3(0, 0, -1));
         if (UnityEditor.SceneView.sceneViews.Count > 0)
         {
             UnityEditor.SceneView sceneView = (UnityEditor.SceneView)UnityEditor.SceneView.sceneViews[0];
