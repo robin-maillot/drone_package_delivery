@@ -38,6 +38,7 @@ public class GameManager : MonoBehaviour {
     private List<Vector3> buildingPivots = new List<Vector3>();
     private Vector3 packagePos;
     private Vector3 packageSpeed;
+    private Vector3 packageGoal;
     public Material newMaterialRef;
 
     private void OnDrawGizmos()
@@ -245,6 +246,30 @@ public class GameManager : MonoBehaviour {
         }
         packagepos = packagepos / numberofGuards;
         return packagepos;
+    }
+
+
+    void setPackageGoal()
+    {
+        var pos = new Vector3[numberofGuards];
+        var packagegoalpos = new Vector3(0, 0, 0);
+        var goalpos = new float[numberofGuards][];
+        //var distances = new float[numberofGuards];
+        for (int i = 0; i < numberofGuards; i++)
+        {
+            var gObj = GameObject.Find("Guard" + i);
+            if (gObj)
+            {
+                pos[i] = new Vector3(point[i].goalPos[0], point[i].goalPos[1], point[i].goalPos[2]);
+            }
+        }
+
+        for (int i = 0; i < numberofGuards; i++)        //pos[i] = 0-3 (in order)
+        {
+            packagegoalpos += pos[i];
+        }
+        packagegoalpos = packagegoalpos / numberofGuards;
+        packageGoal = packagegoalpos;
     }
 
     Map CreateMap()
@@ -510,6 +535,7 @@ public class GameManager : MonoBehaviour {
         }
         packagePos = findPackage();
         packageSpeed = packagePos;
+        setPackageGoal();
         // Power of Cheetah
 
         //Cheetah.instance.CreateOrLoad(problem, boundaryPolygon, inputPolygon);
@@ -593,12 +619,11 @@ public class GameManager : MonoBehaviour {
 
             }
         }
-        moving_camera.transform.position = packagePos - packageSpeed.normalized;
-
-        //var targetRotation = Quaternion.LookRotation(packagePos + packageSpeed + packageSpeed.normalized);
-        // Smoothly rotate towards the target point.
-        //moving_camera.transform.rotation = Quaternion.Slerp(moving_camera.transform.rotation, targetRotation, 0.0001f * Time.deltaTime);
-        moving_camera.transform.LookAt(packagePos + packageSpeed + packageSpeed.normalized, new Vector3(0, 0, -1));
+        //moving_camera.transform.position = packagePos - 2*packageSpeed.normalized+new Vector3(0,0-2);
+        //moving_camera.transform.LookAt(moving_camera.transform.position + packageSpeed, new Vector3(0, 0, -1));
+        Vector3 dir = (packageGoal - moving_camera.transform.position).normalized;
+        moving_camera.transform.position = packagePos - 2 * dir + new Vector3(0, 0 - 2);
+        moving_camera.transform.LookAt(moving_camera.transform.position + dir, new Vector3(0, 0, -1));
         if (UnityEditor.SceneView.sceneViews.Count > 0)
         {
             //UnityEditor.SceneView sceneView = (UnityEditor.SceneView)UnityEditor.SceneView.sceneViews[0];
