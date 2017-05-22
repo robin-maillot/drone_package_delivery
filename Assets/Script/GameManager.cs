@@ -32,8 +32,8 @@ public class GameManager : MonoBehaviour {
     public static float[] dist;
     public static Vector3 wind;
     int buildingnumber = 0;
-
     private List<GameObject> buildingObjects = new List<GameObject>();
+    private List<Quaternion> buildingRotations = new List<Quaternion>();
     private List<Vector3> buildingPivots = new List<Vector3>();
 
     public Material newMaterialRef;
@@ -45,7 +45,7 @@ public class GameManager : MonoBehaviour {
             if (point[i])
             {
                 //Gizmos.color = Color.blue;
-
+                
                 Gizmos.color = Color.blue;
                 Gizmos.DrawCube(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), new Vector3(0.5F, 0.5F, 0));
                 Gizmos.color = Color.yellow;
@@ -74,32 +74,7 @@ public class GameManager : MonoBehaviour {
             if (point[i])
             {
                 Vector3 pos = point[i].transform.position;
-                Vector3 vClosest = new Vector3(100, 100, 100);
-                Vector3 dirn;
-                var distance = Mathf.Infinity;
-                for (int j = 0; j < buildingObjects.Count; j++)
-                {
-                    Vector3 pnt = buildingObjects[j].GetComponent<BoxCollider>().ClosestPointOnBounds(pos);
-                    RaycastHit hit;
-                    Ray downRay = new Ray(pos, pnt - pos);
-                    //Debug.DrawLine(pos, pnt - pos, Color.yellow);
-                    var v = Mathf.Infinity;
-                    if (Physics.Raycast(downRay, out hit))
-                    {
-                        v = hit.distance;
-                        Debug.Log("Distance: "+ v);
-                        if (v < distance)
-                        {
-                            distance = v;
-                            dirn = pnt - pos;
-                            dirn.Normalize();
-                            vClosest = dirn*distance+ pos;
-                        }
-                            
-                    }
-
-                        
-                }
+                Vector3 vClosest = point[i].closestBuildingPoint;
                 Debug.DrawLine(pos, vClosest, Color.cyan);
                 Gizmos.DrawCube(vClosest, new Vector3(0.5F, 0.5F, 0));
                 Gizmos.DrawWireSphere(new Vector3(0, 0, -10), 5);
@@ -372,6 +347,8 @@ public class GameManager : MonoBehaviour {
             if (pair.Key.StartsWith("polygon"))         //checks if name is polygon
             {
                 Debug.Log(pair.Key);
+                buildingRotations.Add(new Quaternion(0, 0, 0, 0));
+
                 float[][] polygon = pair.Value.ToObject<float[][]>();       //extracts float object
 
                 buildingObjects.Add(GeneratePolygonMesh(polygon));
@@ -406,7 +383,7 @@ public class GameManager : MonoBehaviour {
                 Debug.Log(buildnum);
                 Debug.Log(transform.position);
                 float[] rot = pair.Value.ToObject<float[]>();
-
+                buildingRotations[objnum] = Quaternion.Euler(rot[0], rot[1], rot[2]);
                 buildingObjects[objnum].transform.rotation = Quaternion.Euler(rot[0], rot[1], rot[2]);
                 Debug.Log(transform.position);
 
@@ -566,8 +543,8 @@ public class GameManager : MonoBehaviour {
     void Update()
     {
         updateWind();
-        buildingObjects[4].transform.Rotate(Vector3.forward * Time.deltaTime*2f);
-        buildingObjects[2].transform.Translate(Vector3.down * Time.deltaTime);
+        //buildingObjects[4].transform.Rotate(Vector3.forward * Time.deltaTime*2f);
+        //buildingObjects[2].transform.Translate(Vector3.down * Time.deltaTime);
 
         for (int i = 0; i < buildingObjects.Count; i++)
         {
@@ -587,28 +564,20 @@ public class GameManager : MonoBehaviour {
         {
             Vector3 pos = point[i].transform.position;
             Vector3 vClosest = new Vector3(100, 100, 100);
-            Vector3 dirn;
-            var distance = Mathf.Infinity;
             for (int j = 0; j < buildingObjects.Count; j++)
             {
-                Vector3 pnt = buildingObjects[j].GetComponent<BoxCollider>().ClosestPointOnBounds(pos);
-                RaycastHit hit;
-                Ray downRay = new Ray(pos, pnt - pos);
-                //Debug.DrawLine(pos, pnt - pos, Color.yellow);
-                var v = Mathf.Infinity;
-                if (Physics.Raycast(downRay, out hit))
-                {
-                    v = hit.distance;
-                    Debug.Log("Distance: " + v);
-                    if (v < distance)
-                    {
-                        distance = v;
-                        dirn = pnt - pos;
-                        dirn.Normalize();
-                        vClosest = dirn * distance + pos;
-                    }
+                buildingObjects[j].transform.rotation = Quaternion.Euler(0, 0, 0);
 
-                }
+                Vector3 center = buildingObjects[j].transform.position;
+                Vector3 rotatedP = Quaternion.Inverse(buildingRotations[j]) * (pos - center) + center;
+                Vector3 rotatedv = buildingObjects[j].GetComponent<BoxCollider>().ClosestPointOnBounds(rotatedP);
+                Vector3 v = (buildingRotations[j]) * (rotatedv - center) + center;
+
+                //var v = Mathf.Infinity;
+                if (Vector3.Distance(v, pos) < Vector3.Distance(vClosest, pos))
+                    vClosest = v;
+                buildingObjects[j].transform.rotation = buildingRotations[j];
+
                 // Pause when collision
                 point[i].closestBuildingPoint = vClosest;
                 if (buildingObjects[j].GetComponent<BoxCollider>().bounds.Contains(pos))
