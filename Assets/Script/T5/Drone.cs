@@ -17,7 +17,7 @@ public class Drone : Point
     private bool collision = false;
     private float t_run = 0F;
     private float t_dur = 0F;
-    private Vector2 coll_acc;
+    private Vector3 coll_acc;
     public bool initialRush = true;
     public bool finished = false;
     private float finalrad = 0;
@@ -44,7 +44,7 @@ public class Drone : Point
     //-----------------------------------------------------------------------------------------------------------
 
     //Component - General Bias Against walls
-    Vector2 ObstacleAvoid()
+    Vector3 ObstacleAvoid()
     {
         var avoid = new Vector2(0F,0F);
         foreach (var poly in this.polygons)     
@@ -67,6 +67,7 @@ public class Drone : Point
                 
 
         }
+        var vavoid = new Vector3(avoid.x, avoid.y, 0F);
         return avoid;
     }
 
@@ -100,17 +101,18 @@ public class Drone : Point
 
 
     //Component - Pull toward goal/waypoint
-    Vector2 GoalComponent()
+    Vector3 GoalComponent()
     {
         var x = this.goalPos[0] - this.transform.position.x;
         var y = this.goalPos[1] - this.transform.position.y;
-        var comp = new Vector2(x, y);
+        var z = this.goalPos[2] - this.transform.position.z;
+        var comp = new Vector3(x, y, z);
         comp.Normalize();
         return comp;
     }
 
     //Component - vector to keep formation
-    Vector2 FormationComponent(bool rush)
+    Vector3 FormationComponent(bool rush)
     {
         float x = 0, y = 0;
         int j = 0, iteration = 0;
@@ -135,14 +137,10 @@ public class Drone : Point
                 {
                     Debug.Log("Fak");
                 }
-                //PID fubar = new PID();
-                //fubar.error;
-                //Debug.Log("x Error between " + this.guardID + " and " + i + " is " + x);
-                //Debug.Log("y Error between " + this.guardID + " and " + i + " is " + y);
             }
             iteration++;
         }
-        this.formationError = new Vector2(x, y);
+        this.formationError = new Vector3(x, y, 0F);
         return formationError;
     }
 
@@ -195,10 +193,9 @@ public class Drone : Point
         var edgeavoid = AvoidWalls();
 
         //main weights. xMag means the component of x
-        var x = goalcomp.x * goalMag + formcomp.x * formMag + obsavoid.x;// + edgeavoid.x;
-        var y = goalcomp.y * goalMag + formcomp.y * formMag + obsavoid.y;// + edgeavoid.y;
+        var acc = new Vector3(0f, 0f, 0f);
+        acc = goalcomp * goalMag + formcomp * formMag + obsavoid;
 
-        var acc = new Vector2(x, y);
         if (acc.magnitude > MAX_ACCEL)
         {
             acc.Normalize();
@@ -214,10 +211,10 @@ public class Drone : Point
         }
 
         //Shows directions
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, transform.position.z), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, transform.position.z), velcolour);
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, transform.position.z), new Vector3(transform.position.x + acc.x, transform.position.y + acc.y, transform.position.z), Color.black);
+        Debug.DrawLine(transform.position, transform.position + vel, velcolour);
+        Debug.DrawLine(transform.position, transform.position + acc, Color.black);
 
-        return transform.position + new Vector3(vel.x, vel.y, 0F) * dt;
+        return transform.position + vel * dt;
     }
 
 
@@ -245,7 +242,7 @@ public class Drone : Point
                 collision = true;
                 t_dur = t_col;
                 t_run = 0;
-                coll_acc = new Vector2(dirn.x, dirn.y);
+                coll_acc = new Vector3(dirn.x, dirn.y, 0F);
                 //Debug.Log("COLLISION IMMINANT: GUARD " + guardID);
                 //Debug.Log("d: " + d + ", dist: " + dist + ", velmag: " + vel.magnitude );
                 //Debug.Log("dirn: " + Vector2.Dot(vel, dirn));
@@ -267,7 +264,7 @@ public class Drone : Point
 
 
     //-----------------------------------------------------------------------------------------------------------
-    //-------------------------------------------- Utilaties ----------------------------------------------------
+    //-------------------------------------------- Utilities ----------------------------------------------------
     //-----------------------------------------------------------------------------------------------------------
 
     //Function borrowed from the internet. Used a few times. 

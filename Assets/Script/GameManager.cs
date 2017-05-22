@@ -47,9 +47,9 @@ public class GameManager : MonoBehaviour {
                 //Gizmos.color = Color.blue;
                 
                 Gizmos.color = Color.blue;
-                Gizmos.DrawCube(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), new Vector3(0.5F, 0.5F, 0));
+                Gizmos.DrawCube(new Vector3(point[i].startPos[0], point[i].startPos[1], point[i].startPos[2]), new Vector3(0.5F, 0.5F, 0.5F));
                 Gizmos.color = Color.yellow;
-                Gizmos.DrawCube(new Vector3(point[i].goalPos[0], point[i].goalPos[1], 2), new Vector3(0.5F, 0.5F, 0));
+                Gizmos.DrawCube(new Vector3(point[i].goalPos[0], point[i].goalPos[1], point[i].goalPos[2]), new Vector3(0.5F, 0.5F, 0.5F));
                 //Gizmos.DrawIcon(new Vector3(point[i].goalPos[0], point[i].goalPos[1], 0), "doughnut.tif", false);
 
                 List<float[]> unseenitems = new List<float[]>();
@@ -218,8 +218,6 @@ public class GameManager : MonoBehaviour {
         point = point ? point : player.GetComponent<KinematicPoint>();
         point = point ? point : player.GetComponent<StaticGuard>();
         point = point ? point : player.GetComponent<KinematicGuard>();
-        point = point ? point : player.GetComponent<DynamicGuard>();
-        point = point ? point : player.GetComponent<DynamicCar>();
         point = point ? point : player.GetComponent<Drone>();
         return point;
     }
@@ -463,7 +461,7 @@ public class GameManager : MonoBehaviour {
 
             //point[i].startPos = input.start_pos; //need to update for multiple
             point[i].startPos = start_positions[i];
-            point[i].transform.position = new Vector3(start_positions[i][0], start_positions[i][1], -5);
+            point[i].transform.position = new Vector3(start_positions[i][0], start_positions[i][1], start_positions[i][2]);
             point[i].goalPos = end_positions[i];
             point[i].startVel = input.start_vel;
             point[i].goalVel = input.goal_vel;

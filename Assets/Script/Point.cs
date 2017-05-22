@@ -8,7 +8,7 @@ public class Point : MonoBehaviour
 {
     public float[] startPos, goalPos, startVel, goalVel;
     public float MAX_SPEED, MAX_ACCEL, MAX_OMEGA, MAX_PHI, L_CAR, K_FRICTION;
-    public Vector2 vel;
+    public Vector3 vel;
 
     public Vector2[][] polygons;
     public Vector2[] boundaryPolygon;
