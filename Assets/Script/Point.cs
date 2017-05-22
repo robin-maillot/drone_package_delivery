@@ -18,7 +18,7 @@ public class Point : MonoBehaviour
     public int curPos = 0;
     public int guardID;
     public List<Waypoint> waypoint;
-    public List<Vector2> formation; //goes from guard 0 - 4, skipping itself
+    public List<Vector3> formation; //goes from guard 0 - 4, skipping itself
     public Vector2 formationError;
     public float Kp, Kd, Ki;
     public Vector3 closestBuildingPoint;

@@ -114,7 +114,7 @@ public class Drone : Point
     //Component - vector to keep formation
     Vector3 FormationComponent(bool rush)
     {
-        float x = 0, y = 0;
+        float x = 0, y = 0, z = 0;
         int j = 0, iteration = 0;
         for (int i = 0; i < this.formation.Count+1; i++) //9 max guards
         {
@@ -129,8 +129,14 @@ public class Drone : Point
                 var pos = gObj.transform.position;
                 var xerr = (pos.x - this.transform.position.x) - this.formation[i-j].x;
                 var yerr = (pos.y - this.transform.position.y) - this.formation[i-j].y;
+                var zerr = (pos.z - this.transform.position.z) - this.formation[i-j].z;
+
                 x += PIDs(xerr, iteration, 0, rush);  //i = 0-4, need 0-6 -> doesn't matter, so long as consistent
                 y += PIDs(yerr, iteration, 1, rush);
+                z += PIDs(zerr, iteration, 2, rush);
+
+                Debug.Log("zarg");
+                Debug.Log(z);
 
 
                 if (float.IsNaN(x) || float.IsNaN(y))
@@ -140,7 +146,7 @@ public class Drone : Point
             }
             iteration++;
         }
-        this.formationError = new Vector3(x, y, 0F);
+        this.formationError = new Vector3(x, y, z);
         return formationError;
     }
 
@@ -174,8 +180,8 @@ public class Drone : Point
         prev_error = new float[formation.Count][];
         for (int i = 0; i < integral.Length; i++)
         {
-            integral[i] = new float[] { 0, 0 };
-            prev_error[i] = new float[] { 0, 0 };
+            integral[i] = new float[] { 0, 0, 0 };
+            prev_error[i] = new float[] { 0, 0, 0 };
         }
     }
 
