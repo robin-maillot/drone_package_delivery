@@ -25,7 +25,7 @@ public class Drone : Point
     public float formMag = 20;
     public float obsMultiplier = 3;
     public Color velcolour = Color.green;
-
+    private float g = 9.81f;
     private float[][] integral;
     private float[][] prev_error;
 
@@ -326,10 +326,9 @@ public class Drone : Point
             input = GetInput();     //Regurlar Input
         }
 
-        // Add force of wind (assumes acc = F, ie m = 1)
-
+        // Add force of wind and gravity(assumes acc = F, ie m = 1)
         input += GameManager.wind * dt * dt;
-
+        input += g * (new Vector3(0, 0, 1)) * dt * dt;
         transform.position = input;
     }
 

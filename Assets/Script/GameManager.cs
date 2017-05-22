@@ -580,7 +580,6 @@ public class GameManager : MonoBehaviour {
                 //var v = Mathf.Infinity;
                 if (Vector3.Distance(v, pos) < Vector3.Distance(vClosest, pos))
                     vClosest = v;
-                buildingObjects[j].transform.rotation = buildingRotations[j];
 
                 // Pause when collision
                 point[i].closestBuildingPoint = vClosest;
@@ -589,11 +588,16 @@ public class GameManager : MonoBehaviour {
                     Debug.Log("Drone " + i + " is in building " + j);
                     //Debug.Break();
                 }
+                buildingObjects[j].transform.rotation = buildingRotations[j];
 
 
             }
         }
         moving_camera.transform.position = packagePos - packageSpeed.normalized;
+
+        //var targetRotation = Quaternion.LookRotation(packagePos + packageSpeed + packageSpeed.normalized);
+        // Smoothly rotate towards the target point.
+        //moving_camera.transform.rotation = Quaternion.Slerp(moving_camera.transform.rotation, targetRotation, 0.0001f * Time.deltaTime);
         moving_camera.transform.LookAt(packagePos + packageSpeed + packageSpeed.normalized, new Vector3(0, 0, -1));
         if (UnityEditor.SceneView.sceneViews.Count > 0)
         {
