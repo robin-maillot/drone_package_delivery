@@ -36,7 +36,7 @@ public class GameManager : MonoBehaviour {
     private List<GameObject> buildingObjects = new List<GameObject>();
     private List<Quaternion> buildingRotations = new List<Quaternion>();
     private List<Vector3> buildingPivots = new List<Vector3>();
-    private Vector3 packagePos;
+    public static Vector3 packagePos;
     private Vector3 packageSpeed;
     private Vector3 packageGoal;
     private List<Vector3> packageWaypoints = new List<Vector3>();
@@ -560,8 +560,8 @@ public class GameManager : MonoBehaviour {
             {
                 if (j != i)
                 {
-                    var x = formation_sizes[currentCheckpoint];
-                    var y = formation_sizes[currentCheckpoint];
+                    var x = point[j].goalPos[0] - point[i].goalPos[0];
+                    var y = point[j].goalPos[1] - point[i].goalPos[1];
                     point[i].formation.Add(new Vector2(x, y));
                 }
             }
@@ -617,9 +617,9 @@ public class GameManager : MonoBehaviour {
                     {
                         if (j != i)
                         {
-                            var x = formation_sizes[currentCheckpoint];
-                            var y = formation_sizes[currentCheckpoint];
-                            point[i].formation.Add(new Vector2(x, y));
+                            var x = point[j].goalPos[0] - point[i].goalPos[0];
+                            var y = point[j].goalPos[1] - point[i].goalPos[1];
+                            point[i].formation.Add(new Vector3(x, y,0));
                         }
                     }
                 }
