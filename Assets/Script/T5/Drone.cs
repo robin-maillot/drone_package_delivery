@@ -324,6 +324,7 @@ public class Drone : Point
             iteration++;
         }
         avg /= iteration;
+        avg = GameManager.packagePos + new Vector3(0,0,1);
         var diff = avg - transform.position;
         diff /= diff.z;
         pizzaForce = diff * z;
@@ -334,6 +335,24 @@ public class Drone : Point
         return pizzaForce;
     }
 
+    Vector3 compensateGravity(Vector3 force)
+    {
+        Vector3 new_force = force + new Vector3(0,0,-g*( mass+ 1)); // 1+mass = (mass of pizza) + (mass of drone)
+        if (new Vector3(0, 0, -g * (mass + 1)).magnitude / mass > MAX_ACCEL)
+        {
+            Debug.Log("error max acceleration cannot compensate for gravity");
+            Debug.Break();
+        }
+        else
+        {
+            while (new_force.magnitude / mass > MAX_ACCEL)
+            {
+                new_force = new_force - force.normalized * 0.1f;
+            }
+        }
+        
+        return new_force;
+    }
 
     //-----------------------------------------------------------------------------------------------------------
     //------------------------------------------- Game Instances ------------------------------------------------
@@ -361,28 +380,30 @@ public class Drone : Point
     void UpdatePosition()
     {
         float time = totalTime;
-        Vector3 input = new Vector3();
         var dt = Time.deltaTime;
 
-        input = CollisionImminant() * mass;    //This function is the red one that really avoids the walls. Unless we are in the final stretch, we check for collisions. This changes the "collision" variable to true (think like holding a value in a behavoir tree)
+        Vector3 input_force = CollisionImminant() * mass;    //This function is the red one that really avoids the walls. Unless we are in the final stretch, we check for collisions. This changes the "collision" variable to true (think like holding a value in a behavoir tree)
         if (!collision)     //If we don't expect a collision in the walls
         {
             velcolour = Color.blue;
-            input = GetInput() * mass;     //Regurlar Input
+            input_force = GetInput() * mass;     //Regurlar Input
         }
 
+        Vector3 new_input_force = compensateGravity(input_force);
         // Add force of wind and gravity(assumes acc = F, ie m = 1)
-        var input2 = input;
-        input += GameManager.wind;
-        input += g * (new Vector3(0, 0, 1)) *mass;
-        input += PizzaWeight();
-        Debug.Log("Guard: " + guardID + " Old: Input: " + input2 + " New Input: "+ input +" Wind: " + GameManager.wind + " gravity: " + (g * (new Vector3(0, 0, 1))) + " pizza: " + PizzaWeight());
+        var new_input_force2 = new_input_force;
+        new_input_force += GameManager.wind;
+        new_input_force += g * (new Vector3(0, 0, 1)) *mass;
+        new_input_force += PizzaWeight();
+        Debug.Log("Guard: " + guardID + " Old Input: " + new_input_force2 + " New Input: "+ new_input_force + " Wind: " + GameManager.wind + " gravity: " + (g * (new Vector3(0, 0, 1))) + " pizza: " + PizzaWeight());
+        //Debug.Log(" Input before compenstating:: " + input_force + " input after compensating: " + new_input_force2);
+        //Debug.Log(" Input before compenstating:: " + input_force.magnitude/mass + " input after compensating: " + new_input_force2.magnitude/mass);
 
         //Shows directions
-        Debug.DrawLine(transform.position, transform.position + input, velcolour);
-        Debug.DrawLine(transform.position, transform.position + input2, Color.black);
+        Debug.DrawLine(transform.position, transform.position + new_input_force, velcolour);
+        Debug.DrawLine(transform.position, transform.position + new_input_force2, Color.black);
 
-        transform.position += input * dt * dt;
+        transform.position += new_input_force * dt * dt/mass;
     }
 
 }

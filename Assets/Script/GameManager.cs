@@ -41,7 +41,7 @@ public class GameManager : MonoBehaviour {
     private Vector3 packageGoal;
     private List<Vector3> packageWaypoints = new List<Vector3>();
     private List<float> formation_sizes = new List<float>();
-
+    private GameObject packageObject;
     public Material newMaterialRef;
     private Vector3[] drone_offset_positions = new Vector3[4];
     private int currentCheckpoint = 0;
@@ -66,6 +66,8 @@ public class GameManager : MonoBehaviour {
         }
         Vector3 packagepos = findPackage();
         Gizmos.DrawIcon(packagepos, "pizza.tif", true);
+        Gizmos.color = Color.blue;
+        Gizmos.color = Color.yellow;
 
         for (int i = 0; i < buildingObjects.Count; i++)
         {
@@ -94,7 +96,7 @@ public class GameManager : MonoBehaviour {
         }
     }
 
-    private GameObject GeneratePolygonMesh(float[][] polygon)
+    private GameObject GeneratePolygonMesh(float[][] polygon, Color c)
     {
 
         GameObject obj = new GameObject();
@@ -203,7 +205,7 @@ public class GameManager : MonoBehaviour {
         mesh.RecalculateBounds();
 
         obj.AddComponent(typeof(MeshRenderer));
-        obj.GetComponent<MeshRenderer>().material.SetColor("_Color", Color.gray);
+        obj.GetComponent<MeshRenderer>().material.SetColor("_Color", c);
         
         obj.transform.parent = camera.transform;
         obj.name = "Building" + buildingnumber;
@@ -254,6 +256,7 @@ public class GameManager : MonoBehaviour {
             packagepos += pos[i];
         }
         packagepos = packagepos / numberofGuards;
+        packagepos += new Vector3(0, 0, 1);
         return packagepos;
     }
 
@@ -351,6 +354,9 @@ public class GameManager : MonoBehaviour {
 
         boundaryobj.transform.parent = camera.transform;
         boundaryobj.GetComponent<MeshRenderer>().material.SetColor("_Color", Color.cyan);
+        BoxCollider boxCollider = boundaryobj.AddComponent<BoxCollider>();
+        boxCollider.size = new Vector3(100, 100, 10);
+        boxCollider.center = new Vector3(50, 50, 5);
 
         int polygonCnt = 0;
         numberofGuards = 0;
@@ -385,7 +391,7 @@ public class GameManager : MonoBehaviour {
 
                 float[][] polygon = pair.Value.ToObject<float[][]>();       //extracts float object
 
-                buildingObjects.Add(GeneratePolygonMesh(polygon));
+                buildingObjects.Add(GeneratePolygonMesh(polygon, Color.gray));
 
                 Vector2[] vertices2D = new Vector2[polygon.Length];
                 for (int i = 0; i < polygon.Length; i++)
@@ -407,6 +413,23 @@ public class GameManager : MonoBehaviour {
                 buildingPivots.Add(tmp);
             }
         }
+        buildingRotations.Add(new Quaternion(0, 0, 0, 0));
+        buildingObjects.Add(boundaryobj);
+        buildingPivots.Add(new Vector3(50,50,5));
+
+        // Create packageObject
+        foreach (var pair in input.polygon) //need to add rotation to json
+        {
+            if (pair.Key.EndsWith("package"))         //checks if name is polygon
+            {
+                Debug.Log(pair.Key);
+                float[][] package = pair.Value.ToObject<float[][]>();       //extracts float object
+
+                packageObject = GeneratePolygonMesh(package, Color.white);
+                break;
+            }
+        }
+
         foreach (var pair in input.polygon) //need to add rotation to json
         {
             if (pair.Key.EndsWith("_rot"))
@@ -637,6 +660,8 @@ public class GameManager : MonoBehaviour {
         Vector3 newPackagePos = findPackage();
         packageSpeed = newPackagePos - packagePos;
         packagePos = newPackagePos;
+        packageObject.transform.position = packagePos;
+        packageObject.transform.LookAt(packageObject.transform.position + packageSpeed, new Vector3(0, 0, -1));
         updateCurrentCheckpoint();
         //buildingObjects[4].transform.Rotate(Vector3.forward * Time.deltaTime*2f);
         //buildingObjects[2].transform.Translate(Vector3.down * Time.deltaTime);
@@ -687,7 +712,7 @@ public class GameManager : MonoBehaviour {
         //moving_camera.transform.position = packagePos - 2*packageSpeed.normalized+new Vector3(0,0-2);
         //moving_camera.transform.LookAt(moving_camera.transform.position + packageSpeed, new Vector3(0, 0, -1));
         Vector3 dir = (packageGoal - moving_camera.transform.position).normalized;
-        moving_camera.transform.position = packagePos - 2 * dir + new Vector3(0, 0 - 2);
+        moving_camera.transform.position = packagePos -formation_sizes[currentCheckpoint] * 2 * dir + new Vector3(0, 0,-formation_sizes[currentCheckpoint]);
         moving_camera.transform.LookAt(moving_camera.transform.position + dir, new Vector3(0, 0, -1));
         if (UnityEditor.SceneView.sceneViews.Count > 0)
         {
