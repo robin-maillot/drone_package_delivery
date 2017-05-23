@@ -573,7 +573,7 @@ public class GameManager : MonoBehaviour {
         Vector3 newPackagePos = findPackage();
         packageSpeed = newPackagePos - packagePos;
         packagePos = newPackagePos;
-        //buildingObjects[4].transform.Rotate(Vector3.forward * Time.deltaTime*2f);
+        buildingObjects[4].transform.Rotate(Vector3.forward * Time.deltaTime*20f);
         //buildingObjects[2].transform.Translate(Vector3.down * Time.deltaTime);
 
         for (int i = 0; i < buildingObjects.Count; i++)

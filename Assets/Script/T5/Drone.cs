@@ -21,8 +21,10 @@ public class Drone : Point
     public bool initialRush = true;
     public bool finished = false;
     private float finalrad = 0;
+    public float mass = 0.5f;
     public float goalMag = 1;
     public float formMag = 20;
+    public float zMag = 10;
     public float obsMultiplier = 3;
     public Color velcolour = Color.green;
     private float g = 9.81f;
@@ -132,10 +134,6 @@ public class Drone : Point
                 y += PIDs(yerr, iteration, 1, rush);
                 z += PIDs(zerr, iteration, 2, rush);
 
-                Debug.Log("zarg");
-                Debug.Log(z);
-
-
                 if (float.IsNaN(x) || float.IsNaN(y))
                 {
                     Debug.Log("Fak");
@@ -145,6 +143,27 @@ public class Drone : Point
         }
         this.formationError = new Vector3(x, y, z);
         return formationError;
+    }
+
+
+    //Component - vector to keep level height
+    Vector3 HorizontalComponent()
+    {
+        float zavg = 0, iteration = 0;
+        int j = 0;
+        for (int i = 0; i < this.formation.Count + 1; i++) //9 max guards
+        {
+            var gObj = GameObject.Find("Guard" + i);
+            if (gObj)
+            {
+                zavg += gObj.transform.position.z;
+            }
+            iteration++;
+        }
+        zavg /= iteration;
+        var diff = zavg - transform.position.z;
+        var zcomponent = new Vector3(0, 0, diff);
+        return zcomponent;
     }
 
 
@@ -194,10 +213,11 @@ public class Drone : Point
         var formcomp = FormationComponent(false);
         var obsavoid = ObstacleAvoid();
         var edgeavoid = AvoidWalls();
+        var zcomp = HorizontalComponent();
 
         //main weights. xMag means the component of x
         var acc = new Vector3(0f, 0f, 0f);
-        acc = goalcomp * goalMag + formcomp * formMag + obsavoid;
+        acc = goalcomp * goalMag + formcomp * formMag + obsavoid + zMag * zcomp;
 
         if (acc.magnitude > MAX_ACCEL)
         {
@@ -205,19 +225,7 @@ public class Drone : Point
             acc *= MAX_ACCEL;
         }
 
-        var dt = Time.deltaTime;
-        vel += acc * dt;
-        if (vel.magnitude > MAX_SPEED)
-        {
-            vel.Normalize();
-            vel *= MAX_SPEED;
-        }
-
-        //Shows directions
-        Debug.DrawLine(transform.position, transform.position + vel, velcolour);
-        Debug.DrawLine(transform.position, transform.position + acc, Color.black);
-
-        return transform.position + vel * dt;
+        return acc;
     }
 
 
@@ -292,6 +300,40 @@ public class Drone : Point
     }
 
 
+    //-----------------------------------------------------------------------------------------------------------
+    //------------------------------------------ External Factors -----------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------
+    Vector3 PizzaWeight()
+    {
+        var pizzaForce = new Vector3(0F, 0F, 1);
+
+
+        var z = g * 1 /4; //1 = weight of pizza
+
+        var avg = new Vector3 (0, 0, 0);
+        float iteration = 0;
+        int j = 0;
+        for (int i = 0; i < this.formation.Count + 1; i++) //9 max guards
+        {
+            var gObj = GameObject.Find("Guard" + i);
+            if (gObj)
+            {
+                avg += gObj.transform.position;
+                avg.z += 1f;
+            }
+            iteration++;
+        }
+        avg /= iteration;
+        var diff = avg - transform.position;
+        diff /= diff.z;
+        pizzaForce = diff * z;
+        //Debug.Log(diff);
+
+        Debug.DrawLine(transform.position, transform.position + pizzaForce, Color.green);
+
+        return pizzaForce;
+    }
+
 
     //-----------------------------------------------------------------------------------------------------------
     //------------------------------------------- Game Instances ------------------------------------------------
@@ -322,17 +364,25 @@ public class Drone : Point
         Vector3 input = new Vector3();
         var dt = Time.deltaTime;
 
-        input = CollisionImminant();    //This function is the red one that really avoids the walls. Unless we are in the final stretch, we check for collisions. This changes the "collision" variable to true (think like holding a value in a behavoir tree)
+        input = CollisionImminant() * mass;    //This function is the red one that really avoids the walls. Unless we are in the final stretch, we check for collisions. This changes the "collision" variable to true (think like holding a value in a behavoir tree)
         if (!collision)     //If we don't expect a collision in the walls
         {
             velcolour = Color.blue;
-            input = GetInput();     //Regurlar Input
+            input = GetInput() * mass;     //Regurlar Input
         }
 
         // Add force of wind and gravity(assumes acc = F, ie m = 1)
-        input += GameManager.wind * dt * dt;
-        input += g * (new Vector3(0, 0, 1)) * dt * dt;
-        transform.position = input;
+        var input2 = input;
+        input += GameManager.wind;
+        input += g * (new Vector3(0, 0, 1)) *mass;
+        input += PizzaWeight();
+        Debug.Log("Guard: " + guardID + " Old: Input: " + input2 + " New Input: "+ input +" Wind: " + GameManager.wind + " gravity: " + (g * (new Vector3(0, 0, 1))) + " pizza: " + PizzaWeight());
+
+        //Shows directions
+        Debug.DrawLine(transform.position, transform.position + input, velcolour);
+        Debug.DrawLine(transform.position, transform.position + input2, Color.black);
+
+        transform.position += input * dt * dt;
     }
 
 }
