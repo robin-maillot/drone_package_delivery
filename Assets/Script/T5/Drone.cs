@@ -339,8 +339,8 @@ public class Drone : Point
 
     Vector3 compensateGravity(Vector3 force)
     {
-        Vector3 new_force = force + new Vector3(0,0,-g*( mass+ 1)); // 1+mass = (mass of pizza) + (mass of drone)
-        if (new Vector3(0, 0, -g * (mass + 1)).magnitude / mass > MAX_ACCEL)
+        Vector3 new_force = force + new Vector3(0,0,-g*( mass+ 1/4)); // 1+mass = (mass of pizza) + (mass of drone)
+        if (new Vector3(0, 0, -g * (mass + 1/4)).magnitude / mass > MAX_ACCEL)
         {
             Debug.Log("error max acceleration cannot compensate for gravity");
             Debug.Break();
@@ -392,13 +392,13 @@ public class Drone : Point
         }
 
         Vector3 new_input_force = compensateGravity(input_force);
-        // var new_input_force = input_force;
+        //var new_input_force = input_force;
         // Add force of wind and gravity(assumes acc = F, ie m = 1)
         var new_input_force2 = new_input_force;
         new_input_force += GameManager.wind;
         new_input_force += g * (new Vector3(0, 0, 1)) *mass;
         new_input_force += PizzaWeight();
-        Debug.Log("Guard: " + guardID + " Old Input: " + new_input_force2 + " New Input: "+ new_input_force + " Wind: " + GameManager.wind + " gravity: " + (g * (new Vector3(0, 0, 1))) + " pizza: " + PizzaWeight());
+        Debug.Log("Guard: " + guardID + " Old Old Input: " + input_force + " Old Input: " + new_input_force2 + " New Input: "+ new_input_force + " Wind: " + GameManager.wind + " gravity: " + (g * (new Vector3(0, 0, 1))) + " pizza: " + PizzaWeight());
         //Debug.Log(" Input before compenstating:: " + input_force + " input after compensating: " + new_input_force2);
         //Debug.Log(" Input before compenstating:: " + input_force.magnitude/mass + " input after compensating: " + new_input_force2.magnitude/mass);
 
