@@ -300,7 +300,7 @@ MonoBehaviour:
   mapai: {fileID: 1785505170316712, guid: 9b95125bb66c93440b0534a204ed21fe, type: 2}
   camera: {fileID: 1665364587}
   moving_camera: {fileID: 1021170843}
-  max_wind: 5
+  max_wind: 10
   Kp: 1
   Ki: 0
   Kd: 0.2
