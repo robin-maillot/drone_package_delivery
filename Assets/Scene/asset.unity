@@ -304,9 +304,9 @@ MonoBehaviour:
   Kp: 1
   Ki: 0
   Kd: 0.2
-  goal: 100
-  form: 1
-  obs: 10
+  goal: 5
+  form: 0
+  obs: 5
   range: 3
   useSaved: 0
   problem: test_problem_newdiag.json

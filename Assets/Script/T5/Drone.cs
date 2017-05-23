@@ -31,10 +31,14 @@ public class Drone : Point
     private float[][] integral;
     private float[][] prev_error;
 
-    /*private void OnDrawGizmos()
+   /*private void OnDrawGizmos()
     {
-        Gizmos.color = Color.black;  //why the hell do they have the American spelling of color with the English spelling of grey?
-        Gizmos.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + acc.x*100, transform.position.y + acc.y * 100, 20));
+        //Gizmos.color = Color.black;  //why the hell do they have the American spelling of color with the English spelling of grey?
+        //Gizmos.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + acc.x*100, transform.position.y + acc.y * 100, 20));
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, 2);
+
     }*/
 
 
@@ -60,7 +64,7 @@ public class Drone : Point
 
             if (Vector3.Dot(vel, dirn) < 0 && dist < 5)
             {
-                Debug.Log("Distance: " + dist + " dirn " + dirn + " Dot: " + Vector3.Dot(vel, dirn));
+                //Debug.Log("Distance: " + dist + " dirn " + dirn + " Dot: " + Vector3.Dot(vel, dirn));
                 Debug.DrawLine(transform.position, transform.position + new Vector3(dirn.x, dirn.y, 0F), Color.magenta);
                 avoid += dirn;
             }
@@ -238,37 +242,35 @@ public class Drone : Point
     {
         //bool collision = false;
         var dt = Time.deltaTime;
+        var pos = transform.position;
 
         var t_col = this.vel.magnitude / MAX_ACCEL;
-        var d = Mathf.Abs(vel.magnitude) * t_col - MAX_ACCEL * t_col * t_col * 0.5; //maximum possible distance travelled
+        var breakDist = Mathf.Abs(vel.magnitude) * t_col - MAX_ACCEL * t_col * t_col * 0.5f; //maximum possible distance travelled
 
         float dist = Mathf.Infinity;
-            if (!collision)
+        if (!collision)
         {
-            dist = Vector3.Distance(transform.position, closestBuildingPoint);
-            Vector3 dirn = closestBuildingPoint - transform.position;
-            //Debug.Log("dist: " + dist + " Guard: " + guardID);
-            if (dist < d + 0.5 && Vector2.Dot(vel, new Vector2(dirn.x, dirn.y)) < 0)
+            var veln = vel;
+            veln.Normalize();
+            Debug.DrawLine(pos, pos + veln*breakDist, Color.yellow);
+            if (Physics.Raycast(pos, vel, breakDist+2))
             {
                 collision = true;
                 t_dur = t_col;
                 t_run = 0;
-                coll_acc = new Vector3(dirn.x, dirn.y, 0F);
-                //Debug.Log("COLLISION IMMINANT: GUARD " + guardID);
-                //Debug.Log("d: " + d + ", dist: " + dist + ", velmag: " + vel.magnitude );
-                //Debug.Log("dirn: " + Vector2.Dot(vel, dirn));
+                coll_acc = -veln*MAX_ACCEL;   //negative??
+                Debug.Log("COLLISION IMMINANT: GUARD " + guardID);
             }
         }
         if (t_run > t_dur)
             collision = false;
         if (collision) //can't do else, since we need to check this after the first point
         {
-            vel += coll_acc * dt;
             t_run += dt;
-            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, transform.position.z), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, transform.position.z), velcolour);
-            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, transform.position.z), new Vector3(transform.position.x + coll_acc.x, transform.position.y + coll_acc.y, transform.position.z), Color.red);
+            //Debug.DrawLine(transform.position, transform.position + vel*100f, Color.green);
+            Debug.DrawLine(transform.position, transform.position + coll_acc, Color.red);
 
-            return transform.position + new Vector3(vel.x, vel.y, 0F) * dt;
+            return coll_acc;
         }
         return new Vector3(0F, 0F, 0F);
     }
@@ -361,7 +363,7 @@ public class Drone : Point
     // Use this for initialization
     void Start()
     {
-        vel = new Vector2(startVel[0], startVel[1]);
+        vel = new Vector3(startVel[0], startVel[1], 0);
         goalMag = GameManager.goalMag;
         formMag = GameManager.formMag;
         obsMultiplier = GameManager.obsMultiplier;
@@ -390,6 +392,7 @@ public class Drone : Point
         }
 
         Vector3 new_input_force = compensateGravity(input_force);
+        // var new_input_force = input_force;
         // Add force of wind and gravity(assumes acc = F, ie m = 1)
         var new_input_force2 = new_input_force;
         new_input_force += GameManager.wind;
@@ -402,8 +405,14 @@ public class Drone : Point
         //Shows directions
         Debug.DrawLine(transform.position, transform.position + new_input_force, velcolour);
         Debug.DrawLine(transform.position, transform.position + new_input_force2, Color.black);
+        vel += (new_input_force / mass) * dt;
+        if (guardID == 0)
+            Debug.Log(vel);
 
-        transform.position += new_input_force * dt * dt/mass;
+        //Debug.DrawLine(transform.position, transform.position + vel * 100f, Color.green);
+        Debug.DrawLine(transform.position, transform.position + coll_acc, Color.red);
+
+        transform.position = transform.position + vel * dt + new_input_force / mass * dt * dt;
     }
 
 }
