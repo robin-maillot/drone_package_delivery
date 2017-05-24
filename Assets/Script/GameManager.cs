@@ -86,7 +86,7 @@ public class GameManager : MonoBehaviour {
             {
                 Vector3 pos = point[i].transform.position;
                 Vector3 vClosest = point[i].closestBuildingPoint;
-                Debug.DrawLine(pos, vClosest, Color.cyan);
+                //Debug.DrawLine(pos, vClosest, Color.cyan);
                 Gizmos.DrawCube(vClosest, new Vector3(0.5F, 0.5F, 0));
             }
         }
@@ -258,7 +258,7 @@ public class GameManager : MonoBehaviour {
             packagepos += pos[i];
         }
         packagepos = packagepos / numberofGuards;
-        packagepos += new Vector3(0, 0, 1);
+        packagepos += new Vector3(0, 0, 1.0f);
         return packagepos;
     }
 

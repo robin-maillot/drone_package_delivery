@@ -67,7 +67,7 @@ public class Drone : Point
             if (Vector3.Dot(vel, dirn) < 0 && dist < 5)
             {
                 //Debug.Log("Distance: " + dist + " dirn " + dirn + " Dot: " + Vector3.Dot(vel, dirn));
-                Debug.DrawLine(transform.position, transform.position + new Vector3(dirn.x, dirn.y, 0F), Color.magenta);
+                //Debug.DrawLine(transform.position, transform.position + new Vector3(dirn.x, dirn.y, 0F), Color.magenta);
                 avoid += dirn;
             }
                 
@@ -291,7 +291,7 @@ public class Drone : Point
         {
             var veln = vel;
             veln.Normalize();
-            Debug.DrawLine(pos, pos + veln*breakDist, Color.yellow);
+            //Debug.DrawLine(pos, pos + veln*breakDist, Color.yellow);
             if (Physics.Raycast(pos, vel, breakDist+2))
             {
                 collision = true;
@@ -309,7 +309,7 @@ public class Drone : Point
         {
             t_run += dt;
             //Debug.DrawLine(transform.position, transform.position + vel*100f, Color.green);
-            Debug.DrawLine(transform.position, transform.position + coll_acc, Color.red);
+            //Debug.DrawLine(transform.position, transform.position + coll_acc, Color.red);
 
             return coll_acc;
         }
@@ -356,7 +356,7 @@ public class Drone : Point
         var avg = new Vector3 (0, 0, 0);
         float iteration = 0;
         int j = 0;
-        for (int i = 0; i < this.formation.Count + 1; i++) //9 max guards
+        /*for (int i = 0; i < this.formation.Count + 1; i++) //9 max guards
         {
             var gObj = GameObject.Find("Guard" + i);
             if (gObj)
@@ -365,15 +365,16 @@ public class Drone : Point
                 avg.z += 1f;
             }
             iteration++;
-        }
-        avg /= iteration;
-        avg = GameManager.packagePos + new Vector3(0,0,1);
+        }*/
+        //avg /= iteration;
+        avg = GameManager.packagePos;// + new Vector3(0,0,1f);
         var diff = avg - transform.position;
         diff /= diff.z;
         pizzaForce = diff * z;
         //Debug.Log(diff);
 
-        Debug.DrawLine(transform.position, transform.position + pizzaForce, Color.green);
+        Debug.DrawLine(transform.position, avg, Color.white);
+        //Debug.DrawLine(transform.position, transform.position + pizzaForce, Color.green);
 
         return pizzaForce;
     }
@@ -441,11 +442,11 @@ public class Drone : Point
         new_input_force += GameManager.wind;
         new_input_force += g * (new Vector3(0, 0, 1)) *mass;
         new_input_force += PizzaWeight();
-        Debug.Log("Guard: " + guardID + " velocity: " + vel.magnitude + " Input Acc: " + new_input_force2.magnitude +  ", Old Old Input: " + input_force + " Old Input: " + new_input_force2 + " Final Acc: "+ new_input_force + " Wind: " + GameManager.wind + " gravity: " + (g * (new Vector3(0, 0, 1))) * mass + " pizza: " + PizzaWeight()*mass);
+        //Debug.Log("Guard: " + guardID + " velocity: " + vel.magnitude + " Input Acc: " + new_input_force2.magnitude +  ", Old Old Input: " + input_force + " Old Input: " + new_input_force2 + " Final Acc: "+ new_input_force + " Wind: " + GameManager.wind + " gravity: " + (g * (new Vector3(0, 0, 1))) * mass + " pizza: " + PizzaWeight()*mass);
 
         //Shows directions
-        Debug.DrawLine(transform.position, transform.position + new_input_force, velcolour);
-        Debug.DrawLine(transform.position, transform.position + new_input_force2, Color.black);
+        //Debug.DrawLine(transform.position, transform.position + new_input_force, velcolour);
+        //Debug.DrawLine(transform.position, transform.position + new_input_force2, Color.black);
         vel += (new_input_force / mass) * dt;
 
         //Debug.DrawLine(transform.position, transform.position + vel, Color.green);

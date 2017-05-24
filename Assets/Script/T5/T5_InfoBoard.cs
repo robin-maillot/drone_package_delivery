@@ -67,7 +67,7 @@ public class T5_InfoBoard : MonoBehaviour
                     break;
                 }
                 var terror = Vector3.Distance(pos[j], pos[i]);    //terror = temp error
-                Debug.DrawLine(new Vector3(pos[i][0], pos[i][1], pos[i][2]), new Vector3(pos[j][0], pos[j][1], pos[j][2]));
+                //Debug.DrawLine(new Vector3(pos[i][0], pos[i][1], pos[i][2]), new Vector3(pos[j][0], pos[j][1], pos[j][2]));
 
                 var idealdist = Vector2.Distance(new Vector2(goalpos[j][0], goalpos[j][1]), new Vector2(goalpos[i][0], goalpos[i][1]));
                 //need to subtract the ideal distance
