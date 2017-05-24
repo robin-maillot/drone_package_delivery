@@ -224,6 +224,8 @@ public class Drone : Point
     //Function using vector weights to give direction. 
     Vector3 GetInput()
     {
+        var dt = Time.deltaTime;
+
         var goalcomp = GoalComponent();
         var formcomp = FormationComponent(false);
         var obsavoid = ObstacleAvoid();
@@ -239,6 +241,17 @@ public class Drone : Point
         {
             acc.Normalize();
             acc *= MAX_ACCEL;
+        }
+
+        var vel2 = new Vector2(vel.x, vel.y);
+        var acc2 = new Vector2(acc.x, acc.y);
+
+        if ( (vel2 + acc2 * dt).magnitude  > MAX_SPEED && Vector2.Dot(vel2, acc2) > 0)
+        {
+            var normvel = vel2;
+            normvel.Normalize();
+            normvel *= MAX_ACCEL;
+            acc = new Vector3(-normvel.x, -normvel.y, acc.z);
         }
 
         return acc;
@@ -414,7 +427,7 @@ public class Drone : Point
         new_input_force += GameManager.wind;
         new_input_force += g * (new Vector3(0, 0, 1)) *mass;
         new_input_force += PizzaWeight();
-        Debug.Log("Guard: " + guardID + " Input Acc: " + new_input_force2.magnitude +  ", Old Old Input: " + input_force + " Old Input: " + new_input_force2 + " Final Acc: "+ new_input_force + " Wind: " + GameManager.wind + " gravity: " + (g * (new Vector3(0, 0, 1))) * mass + " pizza: " + PizzaWeight()*mass);
+        Debug.Log("Guard: " + guardID + " velocity: " + vel.magnitude + " Input Acc: " + new_input_force2.magnitude +  ", Old Old Input: " + input_force + " Old Input: " + new_input_force2 + " Final Acc: "+ new_input_force + " Wind: " + GameManager.wind + " gravity: " + (g * (new Vector3(0, 0, 1))) * mass + " pizza: " + PizzaWeight()*mass);
 
         //Shows directions
         Debug.DrawLine(transform.position, transform.position + new_input_force, velcolour);
