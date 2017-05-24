@@ -25,6 +25,7 @@ public class Drone : Point
     public float goalMag = 1;
     public float formMag = 20;
     public float zMag = 10;
+    public float heightMag = 1;
     public float obsMultiplier = 3;
     public Color velcolour = Color.green;
     private float g = 9.81f;
@@ -171,6 +172,16 @@ public class Drone : Point
     }
 
 
+    //Component - Keep height above goalPos (assumes goalPos all at the same height)
+    Vector3 HeightComponent()
+    {
+        var z = this.goalPos[2];
+        var diff = goalPos[2] - (transform.position.z + vel.z * Time.deltaTime);
+        if (diff < 0)
+            return new Vector3(0, 0, diff);
+        return new Vector3 (0f, 0f, 0f);
+    }
+
     //-----------------------------------------------------------------------------------------------------------
     //----------------------------------------- Component Utils -------------------------------------------------
     //-----------------------------------------------------------------------------------------------------------
@@ -218,10 +229,11 @@ public class Drone : Point
         var obsavoid = ObstacleAvoid();
         var edgeavoid = AvoidWalls();
         var zcomp = HorizontalComponent();
+        var heightcomp = HeightComponent();
 
         //main weights. xMag means the component of x
         var acc = new Vector3(0f, 0f, 0f);
-        acc = goalcomp * goalMag + formcomp * formMag + obsavoid + zMag * zcomp;
+        acc = goalcomp * goalMag + formcomp * formMag + obsavoid + zMag * zcomp + heightcomp * heightMag;
 
         if (acc.magnitude > MAX_ACCEL)
         {
@@ -260,6 +272,8 @@ public class Drone : Point
                 t_run = 0;
                 coll_acc = -veln*MAX_ACCEL;   //negative??
                 Debug.Log("COLLISION IMMINANT: GUARD " + guardID);
+                Debug.Log(coll_acc + " mag: " + coll_acc.magnitude);
+                //Debug.Break();
             }
         }
         if (t_run > t_dur)
@@ -398,7 +412,7 @@ public class Drone : Point
         new_input_force += GameManager.wind;
         new_input_force += g * (new Vector3(0, 0, 1)) *mass;
         new_input_force += PizzaWeight();
-        Debug.Log("Guard: " + guardID + " Old Old Input: " + input_force + " Old Input: " + new_input_force2 + " New Input: "+ new_input_force + " Wind: " + GameManager.wind + " gravity: " + (g * (new Vector3(0, 0, 1))) + " pizza: " + PizzaWeight());
+        Debug.Log("Guard: " + guardID + " Old Old Input: " + input_force + " Old Input: " + new_input_force2 + " Final Acc: "+ new_input_force + " Wind: " + GameManager.wind + " gravity: " + (g * (new Vector3(0, 0, 1))) + " pizza: " + PizzaWeight());
         //Debug.Log(" Input before compenstating:: " + input_force + " input after compensating: " + new_input_force2);
         //Debug.Log(" Input before compenstating:: " + input_force.magnitude/mass + " input after compensating: " + new_input_force2.magnitude/mass);
 
@@ -406,11 +420,11 @@ public class Drone : Point
         Debug.DrawLine(transform.position, transform.position + new_input_force, velcolour);
         Debug.DrawLine(transform.position, transform.position + new_input_force2, Color.black);
         vel += (new_input_force / mass) * dt;
-        if (guardID == 0)
-            Debug.Log(vel);
+        //if (guardID == 0)
+            //Debug.Log(vel);
 
         //Debug.DrawLine(transform.position, transform.position + vel * 100f, Color.green);
-        Debug.DrawLine(transform.position, transform.position + coll_acc, Color.red);
+        Debug.DrawLine(transform.position, transform.position + new_input_force, Color.red);
 
         transform.position = transform.position + vel * dt + new_input_force / mass * dt * dt;
     }

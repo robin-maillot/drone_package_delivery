@@ -20,10 +20,12 @@ public class GameManager : MonoBehaviour {
     public GameObject moving_camera;
     public float max_wind;
     public float Kp, Ki, Kd;
-    public float goal = 1, form = 20, obs = 3, range = 2;
+    public float goal = 1, form = 20, level = 5, height = 1, obs = 3, range = 2;
     public static float endRange = 2;
     public static float goalMag = 1;
     public static float formMag = 20;
+    public static float zMag = 10;
+    public static float heightMag = 1;
     public static float obsMultiplier = 3;
     public Datastruct data;
     public bool useSaved;
@@ -307,6 +309,9 @@ public class GameManager : MonoBehaviour {
     {
         goalMag = goal;
         endRange = range;
+        zMag = level;
+        heightMag = height;
+
         formMag = form;
         obsMultiplier = obs;
 
