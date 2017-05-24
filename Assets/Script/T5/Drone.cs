@@ -31,6 +31,7 @@ public class Drone : Point
     private float g = 9.81f;
     private float[][] integral;
     private float[][] prev_error;
+    private float prev_height_error = 0f;
 
    /*private void OnDrawGizmos()
     {
@@ -176,10 +177,23 @@ public class Drone : Point
     Vector3 HeightComponent()
     {
         var z = this.goalPos[2];
-        var diff = goalPos[2] - (transform.position.z + vel.z * Time.deltaTime);
-        if (diff < 0)
-            return new Vector3(0, 0, diff);
-        return new Vector3 (0f, 0f, 0f);
+        float kp = 0f, kd = 0f;
+        var error = goalPos[2] - (transform.position.z + vel.z * Time.deltaTime);
+        if (error > 0)
+        {
+            kp = 1.0f;
+            kd = 0.3f;
+        } else {
+            kp = 0.8f;
+            kd = 0.7f;
+        }
+        
+        var derivative = (error - prev_height_error) / Time.deltaTime;
+        var pd = kp * error + kd * derivative;
+
+        //Debug.Log("error: " + error + " pd: " + pd);
+        prev_height_error = error;
+        return new Vector3(0, 0, pd);
     }
 
     //-----------------------------------------------------------------------------------------------------------
