@@ -353,14 +353,16 @@ public class Drone : Point
 
     Vector3 compensateGravity(Vector3 force)
     {
-        Vector3 new_force = force + new Vector3(0,0,-g*( mass+ 1/4)); // 1+mass = (mass of pizza) + (mass of drone)
-        if (new Vector3(0, 0, -g * (mass + 1/4)).magnitude / mass > MAX_ACCEL)
+        Vector3 new_force = force;
+        if (g > MAX_ACCEL)
         {
             Debug.Log("error max acceleration cannot compensate for gravity");
-            Debug.Break();
+            Debug.Log("Max Accel: " + MAX_ACCEL + " Gravity: " + g);
+            //Debug.Break();
         }
         else
         {
+            new_force = force + new Vector3(0, 0, -g * (mass + 1f / 4f)); // 1+mass = (mass of pizza) + (mass of drone)
             while (new_force.magnitude / mass > MAX_ACCEL)
             {
                 new_force = new_force - force.normalized * 0.1f;
@@ -412,19 +414,14 @@ public class Drone : Point
         new_input_force += GameManager.wind;
         new_input_force += g * (new Vector3(0, 0, 1)) *mass;
         new_input_force += PizzaWeight();
-        Debug.Log("Guard: " + guardID + " Old Old Input: " + input_force + " Old Input: " + new_input_force2 + " Final Acc: "+ new_input_force + " Wind: " + GameManager.wind + " gravity: " + (g * (new Vector3(0, 0, 1))) + " pizza: " + PizzaWeight());
-        //Debug.Log(" Input before compenstating:: " + input_force + " input after compensating: " + new_input_force2);
-        //Debug.Log(" Input before compenstating:: " + input_force.magnitude/mass + " input after compensating: " + new_input_force2.magnitude/mass);
+        Debug.Log("Guard: " + guardID + " Input Acc: " + new_input_force2.magnitude +  ", Old Old Input: " + input_force + " Old Input: " + new_input_force2 + " Final Acc: "+ new_input_force + " Wind: " + GameManager.wind + " gravity: " + (g * (new Vector3(0, 0, 1))) * mass + " pizza: " + PizzaWeight()*mass);
 
         //Shows directions
         Debug.DrawLine(transform.position, transform.position + new_input_force, velcolour);
         Debug.DrawLine(transform.position, transform.position + new_input_force2, Color.black);
         vel += (new_input_force / mass) * dt;
-        //if (guardID == 0)
-            //Debug.Log(vel);
 
-        //Debug.DrawLine(transform.position, transform.position + vel * 100f, Color.green);
-        Debug.DrawLine(transform.position, transform.position + new_input_force, Color.red);
+        //Debug.DrawLine(transform.position, transform.position + vel, Color.green);
 
         transform.position = transform.position + vel * dt + new_input_force / mass * dt * dt;
     }

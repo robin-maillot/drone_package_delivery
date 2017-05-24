@@ -306,6 +306,8 @@ MonoBehaviour:
   Kd: 0.2
   goal: 1
   form: 2
+  level: 5
+  height: 1
   obs: 2
   range: 3
   useSaved: 0
