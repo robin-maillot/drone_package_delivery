@@ -640,14 +640,18 @@ public class GameManager : MonoBehaviour {
                 {
                     Vector3 goalV = drone_offset_positions[i] + packageWaypoints[currentCheckpoint];
                     point[i].goalPos = new float[] { goalV.x, goalV.y, goalV.z };
-                    point[i].formation = new List<Vector3>();
+                    point[i].formation.Clear();
+                }
+                for (int i = 0; i < numberofGuards; i++)
+                {
+                    //point[i].formation = new List<Vector3>();
                     for (int j = 0; j < numberofGuards; j++)
                     {
                         if (j != i)
                         {
                             var x = point[j].goalPos[0] - point[i].goalPos[0];
                             var y = point[j].goalPos[1] - point[i].goalPos[1];
-                            point[i].formation.Add(new Vector3(x, y,0));
+                            point[i].formation.Add(new Vector3(x, y,0f));
                         }
                     }
                 }
@@ -721,8 +725,8 @@ public class GameManager : MonoBehaviour {
         moving_camera.transform.LookAt(moving_camera.transform.position + dir, new Vector3(0, 0, -1));
         if (UnityEditor.SceneView.sceneViews.Count > 0)
         {
-            UnityEditor.SceneView sceneView = (UnityEditor.SceneView)UnityEditor.SceneView.sceneViews[0];
-            sceneView.Focus();
+            //UnityEditor.SceneView sceneView = (UnityEditor.SceneView)UnityEditor.SceneView.sceneViews[0];
+            //sceneView.Focus();
         }
     }
 }
