@@ -32,6 +32,7 @@ public class Drone : Point
     private float[][] integral;
     private float[][] prev_error;
     private float prev_height_error = 0f;
+    private Vector3 predicted_pos;
 
    /*private void OnDrawGizmos()
     {
@@ -108,9 +109,13 @@ public class Drone : Point
     //Component - Pull toward goal/waypoint
     Vector3 GoalComponent()
     {
-        var x = this.goalPos[0] - this.transform.position.x;
-        var y = this.goalPos[1] - this.transform.position.y;
-        var z = this.goalPos[2] - this.transform.position.z;
+        //var x = this.goalPos[0] - this.transform.position.x;
+        //var y = this.goalPos[1] - this.transform.position.y;
+        //var z = this.goalPos[2] - this.transform.position.z;
+
+        var x = this.goalPos[0] - predicted_pos.x;
+        var y = this.goalPos[1] - predicted_pos.y;
+        var z = this.goalPos[2] - predicted_pos.z;
         var comp = new Vector3(x, y, z);
         comp.Normalize();
         return comp;
@@ -412,6 +417,7 @@ public class Drone : Point
         formMag = GameManager.formMag;
         obsMultiplier = GameManager.obsMultiplier;
         InitiatePIDs();
+        predicted_pos = transform.position;
     }
 
     // Update is called once per frame
@@ -427,7 +433,7 @@ public class Drone : Point
     {
         float time = totalTime;
         var dt = Time.deltaTime;
-
+        predicted_pos = transform.position + vel * 2 * dt;
         Vector3 input_force = CollisionImminant() * mass;    //This function is the red one that really avoids the walls. Unless we are in the final stretch, we check for collisions. This changes the "collision" variable to true (think like holding a value in a behavoir tree)
         if (!collision)     //If we don't expect a collision in the walls
         {
