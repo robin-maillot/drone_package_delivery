@@ -47,6 +47,8 @@ public class GameManager : MonoBehaviour {
     public Material newMaterialRef;
     private Vector3[] drone_offset_positions = new Vector3[4];
     private int currentCheckpoint = 0;
+    private int frame_nb = 0;
+    private List<Vector3> path = new List<Vector3>(); 
     private void OnDrawGizmos()
     {
         for (int i = 0; i < point.Length; i++)
@@ -96,6 +98,10 @@ public class GameManager : MonoBehaviour {
         {
             Gizmos.DrawCube(w, new Vector3(0.5F, 0.5F, 0.5F));
         }
+        Gizmos.color = Color.cyan;
+        foreach (Vector3 p in path)
+            Gizmos.DrawCube(p, new Vector3(0.2F, 0.2F, 0.2F));
+
     }
 
     private GameObject GeneratePolygonMesh(float[][] polygon, Color c)
@@ -665,10 +671,13 @@ public class GameManager : MonoBehaviour {
     private float[] error = new float[numberofGuards];
     void Update()
     {
+        frame_nb++;
         updateWind();
         Vector3 newPackagePos = findPackage();
         packageSpeed = newPackagePos - packagePos;
         packagePos = newPackagePos;
+        if (frame_nb % 10 == 0)
+            path.Add(packagePos);
         packageObject.transform.position = packagePos;
         packageObject.transform.LookAt(packageObject.transform.position + packageSpeed, new Vector3(0, 0, -1));
         updateCurrentCheckpoint();
