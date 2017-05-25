@@ -101,7 +101,7 @@ public class GameManager : MonoBehaviour {
         {
             Gizmos.DrawCube(w, new Vector3(0.5F, 0.5F, 0.5F));
         }
-        Gizmos.color = Color.cyan;
+        Gizmos.color = Color.magenta;
         foreach (Vector3 p in path)
             Gizmos.DrawCube(p, new Vector3(0.2F, 0.2F, 0.2F));
 
