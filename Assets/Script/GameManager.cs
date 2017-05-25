@@ -72,7 +72,7 @@ public class GameManager : MonoBehaviour {
 
             }
         }
-        Gizmos.DrawIcon(packagePos, "pizza.tif", true);
+        //Gizmos.DrawIcon(packagePos, "pizza.tif", true);
         Gizmos.color = Color.blue;
         Gizmos.color = Color.yellow;
 
@@ -417,6 +417,7 @@ public class GameManager : MonoBehaviour {
                 float[][] package = pair.Value.ToObject<float[][]>();       //extracts float object
 
                 packageObject = GeneratePolygonMesh(package, Color.white);
+                packageObject.GetComponent<MeshRenderer>().material = newMaterialRef;
                 break;
             }
         }
