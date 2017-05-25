@@ -504,10 +504,10 @@ public class GameManager : MonoBehaviour {
                 }
             }
         }
-        drone_offset_positions[0] = new Vector3(-formation_sizes[currentCheckpoint]/2, -formation_sizes[currentCheckpoint] / 2,0);
-        drone_offset_positions[1] = new Vector3(formation_sizes[currentCheckpoint] / 2, -formation_sizes[currentCheckpoint] / 2, 0);
-        drone_offset_positions[2] = new Vector3(formation_sizes[currentCheckpoint] / 2, formation_sizes[currentCheckpoint] / 2, 0);
-        drone_offset_positions[3] = new Vector3(-formation_sizes[currentCheckpoint] / 2, formation_sizes[currentCheckpoint] / 2, 0);
+        drone_offset_positions[0] = new Vector3(-formation_sizes[currentCheckpoint]/2, -formation_sizes[currentCheckpoint] / 2,-1);
+        drone_offset_positions[1] = new Vector3(formation_sizes[currentCheckpoint] / 2, -formation_sizes[currentCheckpoint] / 2, -1);
+        drone_offset_positions[2] = new Vector3(formation_sizes[currentCheckpoint] / 2, formation_sizes[currentCheckpoint] / 2, -1);
+        drone_offset_positions[3] = new Vector3(-formation_sizes[currentCheckpoint] / 2, formation_sizes[currentCheckpoint] / 2, -1);
 
 
 
@@ -632,10 +632,10 @@ public class GameManager : MonoBehaviour {
             if (d < formation_sizes[currentCheckpoint] / 2)
             {
                 currentCheckpoint += 1;
-                drone_offset_positions[0] = new Vector3(-formation_sizes[currentCheckpoint] / 2, -formation_sizes[currentCheckpoint] / 2, 0);
-                drone_offset_positions[1] = new Vector3(formation_sizes[currentCheckpoint] / 2, -formation_sizes[currentCheckpoint] / 2, 0);
-                drone_offset_positions[2] = new Vector3(formation_sizes[currentCheckpoint] / 2, formation_sizes[currentCheckpoint] / 2, 0);
-                drone_offset_positions[3] = new Vector3(-formation_sizes[currentCheckpoint] / 2, formation_sizes[currentCheckpoint] / 2, 0);
+                drone_offset_positions[0] = new Vector3(-formation_sizes[currentCheckpoint] / 2, -formation_sizes[currentCheckpoint] / 2, -1);
+                drone_offset_positions[1] = new Vector3(formation_sizes[currentCheckpoint] / 2, -formation_sizes[currentCheckpoint] / 2, -1);
+                drone_offset_positions[2] = new Vector3(formation_sizes[currentCheckpoint] / 2, formation_sizes[currentCheckpoint] / 2, -1);
+                drone_offset_positions[3] = new Vector3(-formation_sizes[currentCheckpoint] / 2, formation_sizes[currentCheckpoint] / 2, -1);
                 for (int i = 0; i < numberofGuards; i++)
                 {
                     Vector3 goalV = drone_offset_positions[i] + packageWaypoints[currentCheckpoint];
