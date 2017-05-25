@@ -48,7 +48,12 @@ public class GameManager : MonoBehaviour {
     private Vector3[] drone_offset_positions = new Vector3[4];
     private int currentCheckpoint = 0;
     private int frame_nb = 0;
-    private List<Vector3> path = new List<Vector3>(); 
+    private List<Vector3> path = new List<Vector3>();
+    private float finalrad = 0f;
+    private float timetoend = 0f;
+    private bool finished = false, delivered = false;
+
+
     private void OnDrawGizmos()
     {
         for (int i = 0; i < point.Length; i++)
@@ -68,8 +73,7 @@ public class GameManager : MonoBehaviour {
 
             }
         }
-        Vector3 packagepos = findPackage();
-        Gizmos.DrawIcon(packagepos, "pizza.tif", true);
+        Gizmos.DrawIcon(packagePos, "pizza.tif", true);
         Gizmos.color = Color.blue;
         Gizmos.color = Color.yellow;
 
@@ -633,8 +637,35 @@ public class GameManager : MonoBehaviour {
 
     void updateCurrentCheckpoint()
     {
-        if (currentCheckpoint < (packageWaypoints.Count - 1)){
-            float d = Vector3.Distance(packagePos, packageWaypoints[currentCheckpoint]);
+        float d = Vector3.Distance(packagePos, packageWaypoints[currentCheckpoint]);
+        if (currentCheckpoint == (packageWaypoints.Count-1))
+        {
+            if (d < formation_sizes[currentCheckpoint] / 8)
+            {
+                if (timetoend > 1 || finished)
+                {
+                    finished = true;
+                    for (int i = 0; i < numberofGuards; i++)
+                    {
+                        var input = point[i].transform.position;
+                        var x = Mathf.Sin(finalrad);
+                        var y = Mathf.Cos(finalrad);
+                        Debug.DrawLine(input, input + 2 * new Vector3(x, y, 0F), Color.white);
+                        Debug.DrawLine(input, input - 2 * new Vector3(x, y, 0F), Color.white);
+                        finalrad += Time.deltaTime;
+                        finalrad %= 2F * Mathf.PI;
+                    }
+                }
+                timetoend += Time.deltaTime;
+                currentCheckpoint -= 1;
+            }
+            else
+            {
+                timetoend = 0f;
+            }
+                
+        }
+        if (currentCheckpoint < (packageWaypoints.Count-1)){
             if (d < formation_sizes[currentCheckpoint] / 2)
             {
                 currentCheckpoint += 1;
@@ -664,6 +695,7 @@ public class GameManager : MonoBehaviour {
             }
                 
         }
+
     }
 
     // Update is called once per frame
@@ -673,7 +705,26 @@ public class GameManager : MonoBehaviour {
     {
         frame_nb++;
         updateWind();
-        Vector3 newPackagePos = findPackage();
+        Vector3 newPackagePos = packagePos;
+        if (!finished)
+        {
+            newPackagePos = findPackage();
+        }
+        else if (finished & !delivered)
+        {
+            newPackagePos += new Vector3(0f, 0f, Time.deltaTime);
+            for (int j = 0; j < buildingObjects.Count; j++)
+            {
+                if (buildingObjects[j].GetComponent<BoxCollider>().bounds.Contains(newPackagePos))
+                {
+                    delivered = true;
+                }
+            }
+        }
+        else
+        {
+            Debug.Log("PizzaDelivered!");
+        }
         packageSpeed = newPackagePos - packagePos;
         packagePos = newPackagePos;
         if (frame_nb % 10 == 0)
