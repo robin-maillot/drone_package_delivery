@@ -684,15 +684,6 @@ public class GameManager : MonoBehaviour {
         //buildingObjects[4].transform.Rotate(Vector3.forward * Time.deltaTime*2f);
         //buildingObjects[2].transform.Translate(Vector3.down * Time.deltaTime);
 
-        for (int i = 0; i < buildingObjects.Count; i++)
-        {
-            for (int j = 0; j < numberofGuards; j++)
-            {
-                if (buildingObjects[i].GetComponent<BoxCollider>().bounds.Contains(point[j].transform.position))
-                    Debug.Log("Drone "+j+" is in building "+i);
-            }
-        }
-
         //error
         totalTime += Time.deltaTime;
 
@@ -717,7 +708,7 @@ public class GameManager : MonoBehaviour {
 
                 // Pause when collision
                 point[i].closestBuildingPoint = vClosest;
-                if (buildingObjects[j].GetComponent<BoxCollider>().bounds.Contains(pos))
+                if (buildingObjects[j].GetComponent<BoxCollider>().bounds.Contains(rotatedP))
                 {
                     Debug.Log("Drone " + i + " is in building " + j);
                     //Debug.Break();
