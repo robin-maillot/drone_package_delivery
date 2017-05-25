@@ -189,7 +189,7 @@ public class Drone : Point
             kp = 1.0f;
             kd = 0.3f;
         } else {
-            kp = 0.8f;
+            kp = 0.4f;
             kd = 0.7f;
         }
         
