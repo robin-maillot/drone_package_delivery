@@ -706,17 +706,15 @@ public class GameManager : MonoBehaviour {
         if (frame_nb % 10 == 0)
             path.Add(packagePos);
         packageObject.transform.position = packagePos;
-        packageObject.transform.LookAt(packageObject.transform.position + packageSpeed, new Vector3(0, 0, -1));
+        packageObject.transform.LookAt(packageObject.transform.position + new Vector3(packageSpeed.x,packageSpeed.y,0), new Vector3(0, 0, -1));
         updateCurrentCheckpoint();
-        //buildingObjects[7].transform.Rotate(Vector3.up * Time.deltaTime*100f);
-        //buildingObjects[2].transform.Translate(Vector3.down * Time.deltaTime);
         if (problem == "big_map.json")
         {
             buildingRotations[7] *= Quaternion.Euler(0, 0, Time.deltaTime * 4f);
-            if (buildingObjects[10].transform.position.x < 0 || buildingObjects[10].transform.position.x > 7.5)
+            if (buildingObjects[10].transform.position.x < -1 || buildingObjects[10].transform.position.x > 7.5)
                 translate_direction = -translate_direction;
-            buildingObjects[10].transform.position += translate_direction * Time.deltaTime * 2f;
-            buildingObjects[11].transform.position -= translate_direction * Time.deltaTime * 2f;
+            buildingObjects[10].transform.position += translate_direction * Time.deltaTime * 1f;
+            buildingObjects[11].transform.position -= translate_direction * Time.deltaTime  *1f;
         }
         //error
         totalTime += Time.deltaTime;
