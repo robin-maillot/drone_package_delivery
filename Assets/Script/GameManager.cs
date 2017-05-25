@@ -676,6 +676,7 @@ public class GameManager : MonoBehaviour {
     // Update is called once per frame
     private float totalTime = 0F;
     private float[] error = new float[numberofGuards];
+    private Vector3 translate_direction = new Vector3(-1, 0, 0);
     void Update()
     {
         frame_nb++;
@@ -712,7 +713,10 @@ public class GameManager : MonoBehaviour {
         if (problem == "big_map.json")
         {
             buildingRotations[7] *= Quaternion.Euler(0, 0, Time.deltaTime * 4f);
-            buildingObjects[7].transform.rotation *= Quaternion.Euler(0, 0, Time.deltaTime * 4f);
+            if (buildingObjects[10].transform.position.x < 0 || buildingObjects[10].transform.position.x > 7.5)
+                translate_direction = -translate_direction;
+            buildingObjects[10].transform.position += translate_direction * Time.deltaTime * 2f;
+            buildingObjects[11].transform.position -= translate_direction * Time.deltaTime * 2f;
         }
         //error
         totalTime += Time.deltaTime;
