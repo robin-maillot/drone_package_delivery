@@ -304,13 +304,8 @@ MonoBehaviour:
   Kp: 1
   Ki: 0
   Kd: 0.2
-<<<<<<< HEAD
   goal: 4
   form: 2
-=======
-  goal: 3
-  form: 5
->>>>>>> 3dfe6bf2dde3ca1cf409630d3f7a99a34aa7e880
   level: 5
   height: 2
   obs: 3
