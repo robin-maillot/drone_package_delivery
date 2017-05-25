@@ -366,8 +366,8 @@ public class GameManager : MonoBehaviour {
         boundaryobj.transform.parent = camera.transform;
         boundaryobj.GetComponent<MeshRenderer>().material.SetColor("_Color", Color.cyan);
         BoxCollider boxCollider = boundaryobj.AddComponent<BoxCollider>();
-        boxCollider.size = new Vector3(100, 100, 10);
-        boxCollider.center = new Vector3(50, 50, 5);
+        boxCollider.size = new Vector3(400, 400, 10);
+        boxCollider.center = new Vector3(0, 0, 5);
 
         int polygonCnt = 0;
         numberofGuards = 0;
@@ -681,9 +681,13 @@ public class GameManager : MonoBehaviour {
         packageObject.transform.position = packagePos;
         packageObject.transform.LookAt(packageObject.transform.position + packageSpeed, new Vector3(0, 0, -1));
         updateCurrentCheckpoint();
-        //buildingObjects[4].transform.Rotate(Vector3.forward * Time.deltaTime*2f);
+        //buildingObjects[7].transform.Rotate(Vector3.up * Time.deltaTime*100f);
         //buildingObjects[2].transform.Translate(Vector3.down * Time.deltaTime);
-
+        if (problem == "big_map.json")
+        {
+            buildingRotations[7] *= Quaternion.Euler(0, 0, Time.deltaTime * 4f);
+            buildingObjects[7].transform.rotation *= Quaternion.Euler(0, 0, Time.deltaTime * 4f);
+        }
         //error
         totalTime += Time.deltaTime;
 
