@@ -95,7 +95,6 @@ public class GameManager : MonoBehaviour {
                 Gizmos.DrawCube(vClosest, new Vector3(0.5F, 0.5F, 0));
             }
         }
-        Gizmos.DrawWireSphere(new Vector3(0, 0, -10), 5);
         Gizmos.color = Color.green;
         foreach (Vector3 w in packageWaypoints)
         {
@@ -104,6 +103,7 @@ public class GameManager : MonoBehaviour {
         Gizmos.color = Color.magenta;
         foreach (Vector3 p in path)
             Gizmos.DrawCube(p, new Vector3(0.2F, 0.2F, 0.2F));
+        Gizmos.DrawWireSphere(new Vector3(0, 0, -10), 5);
 
     }
 
